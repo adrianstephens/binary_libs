@@ -234,8 +234,10 @@ function resolveTypesTransformer(program: ts.Program): ts.TransformerFactory<ts.
 				}
 
 				if (ts.isVariableStatement(node)) {
-					exported	= false;
-					node		= ts.visitEachChild(node, visit, context);
+					const modifiers = node.modifiers;
+					exported	= !!modifiers && modifiers.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
+					if (!exported)
+						node = ts.visitEachChild(node, visit, context);
 					return exported ? node : undefined;
 				}
 
