@@ -264,45 +264,45 @@ const ST_OTHER = binary.BitFields({
 //--------------------	DYNAMIC
 
 const DT_TAG = {
-	//Name				Value			d_un		Executable	Shared Object
-	DT_NULL:			0,			//ignored	mandatory mandatory
-	DT_NEEDED:			1,			//d_val		optional optional
-	DT_PLTRELSZ:		2,			//d_val		optional optional
-	DT_PLTGOT:			3,			//d_ptr		optional optional
-	DT_HASH:			4,			//d_ptr		mandatory mandatory
-	DT_STRTAB:			5,			//d_ptr		mandatory mandatory
-	DT_SYMTAB:			6,			//d_ptr		mandatory mandatory
-	DT_RELA:			7,			//d_ptr		mandatory optional
-	DT_RELASZ:			8,			//d_val		mandatory optional
-	DT_RELAENT:			9,			//d_val		mandatory optional
-	DT_STRSZ:			10,			//d_val		mandatory mandatory
-	DT_SYMENT:			11,			//d_val		mandatory mandatory
-	DT_INIT:			12,			//d_ptr		optional optional
-	DT_FINI:			13,			//d_ptr		optional optional
-	DT_SONAME:			14,			//d_val		ignored optional
-	DT_RPATH:			15,			//d_val		optional ignored (LEVEL2)
-	DT_SYMBOLIC:		16,			//ignored	ignored optional  (LEVEL2)
-	DT_REL:				17,			//d_ptr		mandatory optional
-	DT_RELSZ:			18,			//d_val		mandatory optional
-	DT_RELENT:			19,			//d_val		mandatory optional
-	DT_PLTREL:			20,			//d_val		optional optional
-	DT_DEBUG:			21,			//d_ptr		optional ignored
-	DT_TEXTREL:			22,			//ignored	optional optional (LEVEL2)
-	DT_JMPREL:			23,			//d_ptr		optional optional
-	DT_BIND_NOW:		24,			//ignored	optional optional (LEVEL2)
-	DT_INIT_ARRAY:		25,			//d_ptr		optional optional
-	DT_FINI_ARRAY:		26,			//d_ptr		optional optional
-	DT_INIT_ARRAYSZ:	27,			//d_val		optional optional
-	DT_FINI_ARRAYSZ:	28,			//d_val		optional optional
-	DT_RUNPATH:			29,			//d_val		optional optional
-	DT_FLAGS:			30,			//d_val		optional optional
-	DT_ENCODING:		32,			//unspecified unspecified unspecified
-//	DT_PREINIT_ARRAY:	32,			//d_ptr		optional ignored
-	DT_PREINIT_ARRAYSZ:	33,			//d_val		optional ignored
-	DT_LOOS:			0x6000000D,	//unspecified unspecified unspecified
-	DT_HIOS:			0x6ffff000,	//unspecified unspecified unspecified
-	DT_LOPROC:			0x70000000,	//unspecified unspecified unspecified
-	DT_HIPROC:			0x7fffffff,	//unspecified unspecified unspecified
+	//Name				Value		d_un			Executable	Shared Object
+	DT_NULL:			0,			//ignored		mandatory 	mandatory
+	DT_NEEDED:			1,			//d_val			optional 	optional
+	DT_PLTRELSZ:		2,			//d_val			optional 	optional
+	DT_PLTGOT:			3,			//d_ptr			optional 	optional
+	DT_HASH:			4,			//d_ptr			mandatory 	mandatory
+	DT_STRTAB:			5,			//d_ptr			mandatory 	mandatory
+	DT_SYMTAB:			6,			//d_ptr			mandatory 	mandatory
+	DT_RELA:			7,			//d_ptr			mandatory 	optional
+	DT_RELASZ:			8,			//d_val			mandatory 	optional
+	DT_RELAENT:			9,			//d_val			mandatory 	optional
+	DT_STRSZ:			10,			//d_val			mandatory 	mandatory
+	DT_SYMENT:			11,			//d_val			mandatory 	mandatory
+	DT_INIT:			12,			//d_ptr			optional 	optional
+	DT_FINI:			13,			//d_ptr			optional 	optional
+	DT_SONAME:			14,			//d_val			ignored 	optional
+	DT_RPATH:			15,			//d_val			optional 	ignored (LEVEL2)
+	DT_SYMBOLIC:		16,			//ignored		ignored 	optional  (LEVEL2)
+	DT_REL:				17,			//d_ptr			mandatory 	optional
+	DT_RELSZ:			18,			//d_val			mandatory 	optional
+	DT_RELENT:			19,			//d_val			mandatory 	optional
+	DT_PLTREL:			20,			//d_val			optional 	optional
+	DT_DEBUG:			21,			//d_ptr			optional 	ignored
+	DT_TEXTREL:			22,			//ignored		optional 	optional (LEVEL2)
+	DT_JMPREL:			23,			//d_ptr			optional 	optional
+	DT_BIND_NOW:		24,			//ignored		optional 	optional (LEVEL2)
+	DT_INIT_ARRAY:		25,			//d_ptr			optional 	optional
+	DT_FINI_ARRAY:		26,			//d_ptr			optional 	optional
+	DT_INIT_ARRAYSZ:	27,			//d_val			optional 	optional
+	DT_FINI_ARRAYSZ:	28,			//d_val			optional 	optional
+	DT_RUNPATH:			29,			//d_val			optional 	optional
+	DT_FLAGS:			30,			//d_val			optional 	optional
+	DT_ENCODING:		32,			//unspecified 	unspecified unspecified
+//	DT_PREINIT_ARRAY:	32,			//d_ptr			optional 	ignored
+	DT_PREINIT_ARRAYSZ:	33,			//d_val			optional 	ignored
+	DT_LOOS:			0x6000000D,	//unspecified 	unspecified unspecified
+	DT_HIOS:			0x6ffff000,	//unspecified 	unspecified unspecified
+	DT_LOPROC:			0x70000000,	//unspecified 	unspecified unspecified
+	DT_HIPROC:			0x7fffffff,	//unspecified 	unspecified unspecified
 } as const;
 /*
 const DT_FLAGS = {
@@ -622,19 +622,19 @@ function readDataAs<T extends binary.Type>(data: binary.MappedMemory | undefined
 }
 
 export class ELFFile {
-	segments;//: [string, any][] = [];
-	sections;//: [string, any][] = [];
+	segments;
+	sections;
 	header;
+
+	static check(data: Uint8Array): boolean {
+		return binary.utils.decodeText(data.subarray(0, 4), 'utf8') === '\x7fELF';
+	}
 
 	getDynamic;
 	getRel;
 	getRelA;
 	getSymbols;
 	getDynamicSymbols;
-
-	static check(data: Uint8Array): boolean {
-		return binary.utils.decodeText(data.subarray(0, 4), 'utf8') === '\x7fELF';
-	}
 
 	constructor(data: Uint8Array) {
 		const s		= new binary.stream(data);
@@ -671,7 +671,7 @@ export class ELFFile {
 			e_shstrndx:		Half,		//section header table index of section name string table
 		};
 
-		class Phdr extends binary.ReadStruct(bits == 32 ? {
+		class Phdr extends binary.ReadClass(bits == 32 ? {
 			p_type:			binary.asEnum(Word, PT),		//kind of segment this array element describes
 			p_offset:		Off,		//offset from the beginning of the file at which the first byte of the segment resides
 			p_vaddr:		Addr,		//virtual address at which the first byte of the segment resides in memory
@@ -700,7 +700,7 @@ export class ELFFile {
 			}
 		}
 
-		class Shdr extends binary.ReadStruct({
+		class Shdr extends binary.ReadClass({
 			sh_name:		Word,		//name of the section
 			sh_type:		binary.asEnum(Word, SHT),		//categorizes the section's contents and semantics
 			sh_flags:		binary.asFlags(Xword, SHF),		//miscellaneous attributes
@@ -721,7 +721,7 @@ export class ELFFile {
 				this.data = new binary.MappedMemory(s.buffer_at(Number(this.sh_offset), Number(this.sh_size)), +this.sh_addr, flags);
 			}
 		}
-		
+
 		const	h = binary.read(s, Ehdr);
 		this.header = h;
 
@@ -784,7 +784,7 @@ export class ELFFile {
 						const flags	= sym.st_info.type === 'FUNC' ? section.data.flags : section.data.flags & ~binary.MEM.EXECUTE;
 						sym.data = new binary.MappedMemory(section.data.data.subarray(offset, offset + Number(sym.st_size)), Number(sym.st_value.value), flags);
 					}
-					return [binary.utils.decodeTextTo0(names.subarray(sym.st_name), 'utf8'), sym];
+					return [binary.utils.decodeTextTo0(names.subarray(sym.st_name), 'utf8'), sym] as [string, typeof sym];
 				});
 			}
 		}
@@ -800,14 +800,3 @@ export class ELFFile {
 		return this.sections.find(i => i[1].sh_type === type)?.[1];
 	}
 }
-/*
-export function load(data: Uint8Array) {
-	const	s = new binary.stream(data);
-	const ident = binary.read(s, Ident);
-	if (ident.magic == utils.stringCode("\x7fELF")) {
-		const	be		= ident.encoding	== 'MSB';
-		const	bits	= ident.file_class	== 'CLASS32' ? 32 : 64;
-		return new ELFFile(data, bits, be);
-	}
-}
-*/

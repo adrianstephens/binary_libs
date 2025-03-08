@@ -125,7 +125,7 @@ const SECTION_CHARACTERISTICS = {
 	MEM_WRITE:				0x80000000,
 } as const;
 
-class Section extends binary.ReadStruct({
+class Section extends binary.ReadClass({
 	Name:					binary.StringType(8),
 	VirtualSize:			uint32,
 	VirtualAddress:			binary.asHex(uint32),
@@ -264,13 +264,9 @@ const OPTIONAL_HEADER64 = {
 	DataDirectory:  			binary.objectWithNames(binary.ArrayType(uint32, DATA_DIRECTORY), binary.names(Object.keys(DIRECTORIES))),
 };
 
-//const dummy_header = {} as binary.ReadType<typeof DOS_HEADER> & binary.ReadType<typeof EXE_HEADER>;
-type HEADER = binary.ReadType<typeof DOS_HEADER> & binary.ReadType<typeof EXE_HEADER>;
-type OPT	= binary.ReadType<typeof OPTIONAL_HEADER> & (binary.ReadType<typeof OPTIONAL_HEADER32> | binary.ReadType<typeof OPTIONAL_HEADER64>);
-
 export class PE {
-	header:		HEADER;
-	opt?:		OPT;
+	header:		binary.ReadType<typeof DOS_HEADER> & binary.ReadType<typeof EXE_HEADER>;
+	opt?:		binary.ReadType<typeof OPTIONAL_HEADER> & (binary.ReadType<typeof OPTIONAL_HEADER32> | binary.ReadType<typeof OPTIONAL_HEADER64>);
 	sections:	Section[];
 
 	static check(data: Uint8Array): boolean {
@@ -440,7 +436,7 @@ export function ReadImports(file: pe_stream) {
 //	resources
 //-----------------------------------------------------------------------------
 
-class RESOURCE_DATA_ENTRY extends binary.ReadStruct({
+class RESOURCE_DATA_ENTRY extends binary.ReadClass({
 	OffsetToData:	uint32,
 	Size:			uint32,
 	CodePage:		uint32,

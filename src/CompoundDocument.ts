@@ -14,7 +14,7 @@ class FAT {
 	dirty_fat	= new Set<number>();
 	dirty_sec	= new Set<number>();
 
-	constructor(size: number, public shift:number, public sectors: Uint8Array) {
+	constructor(size: number, public shift: number, public sectors: Uint8Array) {
 		this.fat = new Int32Array(size);
 	}
 
@@ -99,7 +99,7 @@ class FAT {
 
 }
 
-export class Header extends binary.ReadWriteStruct({
+export class Header extends binary.Class({
 	magic:			binary.UINT64_BE,
 	id:				binary.Buffer(16),
 	revision:		binary.UINT16_LE,
@@ -137,7 +137,7 @@ const COLOUR = {
 	RED: 0, BLACK: 1
 } as const;
 
-class DirEntry  extends binary.ReadWriteStruct({
+class DirEntry  extends binary.Class({
 	name:			binary.StringType(64, 'utf16le'),
 	name_size:		binary.UINT16_LE,
 	type:			binary.UINT8,

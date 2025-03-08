@@ -134,19 +134,19 @@ class FATMachFile {
 Archive files for static linking
 
 ```typescript
-export type AR_HEADER = {
-    name:   	string;
-    date:   	number;
-    uid:    	number;
-    gid:    	number;
-    mode:   	number;
-    size:   	number;
-    fmag:   	string;
-    contents:   any;
+type HEADER = {
+    name: string;
+    date: number;
+    uid: number;
+    gid: number;
+    mode: number;
+    size: number;
+    fmag: string;
+    contents: any;
 };
-
-class ArchFile {
-    members: AR_HEADER[];
+declare class ArchFile {
+    members: HEADER[];
+    static check(data: Uint8Array): boolean;
     constructor(data: Uint8Array);
 }
 ```

@@ -1,6 +1,6 @@
 import * as binary from '@isopodlabs/binary';
 
-class mach_stream extends binary.stream_endian {
+class mach_stream extends binary.endianStream {
 	constructor(public base: Uint8Array, data: Uint8Array, be: boolean, public mem?: binary.memory) { super(data, be); }
 	subdata(offset: number, size?: number) {
 		return this.base.subarray(offset, size && offset + size);
@@ -296,8 +296,6 @@ const enum CMD {
 	DYLD_EXPORTS_TRIE			= REQ_DYLD+0x33,	// used with linkedit_data_command, payload is trie
 	DYLD_CHAINED_FIXUPS			= REQ_DYLD+0x34,	// used with linkedit_data_command
 };
-// as const;
-//export type CMD = typeof CMD[keyof typeof CMD];
 
 const str = {
 	get(s: binary.stream) {
@@ -404,7 +402,7 @@ const SECTION_FLAGS = binary.BitFields({
 function section(bits: 32|64) {
 	const type		= binary.UINT(bits);
 
-	class Section extends binary.ReadWriteStruct({
+	class Section extends binary.Class({
 		//data:		binary.DontRead<binary.utils.MappedMemory>(),
 		sectname: 	fixed_string16,
 		segname: 	fixed_string16,
@@ -439,7 +437,7 @@ const SEGMENT_FLAGS = {
 	PROTECTED_VERSION_1:	0x8,	// This segment is protected.	If the segment starts at file offset 0, the first page of the segment is not protected.	All other pages of the segment are protected.
 };
 
-function segment(bits: 32|64) {
+function segment<T extends 32|64>(bits: T) {
 	const type		= binary.UINT(bits);
 	const fields	= {
 		data:		binary.DontRead<binary.MappedMemory>(),
@@ -455,20 +453,61 @@ function segment(bits: 32|64) {
 		sections:	binary.DontRead<Record<string, any>>(),//binary.ReadType<typeof section(bits)>)),
 	};
 	return {
-		async get(s: mach_stream) {
+		get(s: mach_stream) {
 			const o = binary.read(s, fields);
-			const data = await s.getmem(BigInt(o.vmaddr), Number(o.filesize)) ?? s.subdata(Number(o.fileoff), Number(o.filesize));
-			o.data = new binary.MappedMemory(data, Number(o.vmaddr), o.initprot);
 
-			//const sect = section(bits);
-			if (o.nsects) {
-				o.sections = binary.objectWithNames(binary.ArrayType(o.nsects, section(bits)), binary.field('sectname')).get(s);
-				//o.sections = Object.fromEntries(Array.from({length: o.nsects}, (_,i)=>new sect(s)).map(s => [s.sectname, s]));
+			async function load() {
+				const data = await s.getmem(BigInt(Number(o.vmaddr)), Number(o.filesize)) ?? s.subdata(Number(o.fileoff), Number(o.filesize));
+				o.data = new binary.MappedMemory(data, Number(o.vmaddr), o.initprot);
+
+				//const sect = section(bits);
+				if (o.nsects) {
+					o.sections = binary.objectWithNames(binary.ArrayType(o.nsects, section(bits)), binary.field('sectname')).get(s);
+					//o.sections = Object.fromEntries(Array.from({length: o.nsects}, (_,i)=>new sect(s)).map(s => [s.sectname, s]));
+				}
 			}
+		
+			load();
 			return o;
 		}
 	};
 }
+
+/*
+function segment(bits: 32|64) {
+	const type		= binary.UINT(bits);
+	return class extends binary.ReadWriteStruct({
+		segname: 	fixed_string16,	// segment name
+		vmaddr:		type,		// memory address of this segment
+		vmsize:		type,		// memory size of this segment
+		fileoff:	type,		// file offset of this segment
+		filesize:	type,		// amount to map from the file
+		maxprot:	uint32,		// maximum VM protection
+		initprot:	uint32,		// initial VM protection
+		nsects:		uint32,		// number of sections in segment
+		flags:		binary.as(uint32, binary.Flags(SEGMENT_FLAGS,true)),			// flags
+	}) {
+		data?:		binary.MappedMemory;
+		sections:	Record<string, any>	= {};
+
+		constructor(s: mach_stream) {
+			super(s);
+			this.load(s);
+		}
+		async load(s: mach_stream) {
+			const data = await s.getmem(BigInt(this.vmaddr), Number(this.filesize)) ?? s.subdata(Number(this.fileoff), Number(this.filesize));
+			this.data = new binary.MappedMemory(data, Number(this.vmaddr), this.initprot);
+
+			//const sect = section(bits);
+			if (this.nsects) {
+				this.sections = binary.objectWithNames(binary.ArrayType(this.nsects, section(bits)), binary.field('sectname')).get(s);
+				//o.sections = Object.fromEntries(Array.from({length: o.nsects}, (_,i)=>new sect(s)).map(s => [s.sectname, s]));
+			}
+
+		}
+	};
+}
+*/
 
 const fvmlib = {
 	name:			str,	// library's target pathname
@@ -775,7 +814,7 @@ const dyld_chained_import_addend64 = {
 	addend:	uint64,
 };
 
-class dyld_chained_fixups extends binary.ReadStruct({
+class dyld_chained_fixups extends binary.ReadClass({
 	fixups_version:	uint32,	// currently 0
 	starts:			binary.OffsetType(uint32, dyld_chained_starts_in_image),
 	imports:		binary.OffsetType(uint32, binary.Remainder),	// offset of imports table in chain_data
@@ -791,18 +830,20 @@ class dyld_chained_fixups extends binary.ReadStruct({
 		ZLIB:				1,
 	}),
 }) {
-	constructor(s: binary.stream_endian) {
+	imports2;
+	constructor(s: binary.endianStream) {
 		super(s);
-		const imports = new binary.stream_endian(this.imports, s.be);
+		const imports = new binary.endianStream(this.imports, s.be);
 		switch (this.imports_format) {
-			case 'IMPORT':
-				this.imports = binary.withNames(binary.readn(imports, dyld_chained_import, this.imports_count), imp => binary.utils.decodeTextTo0(this.symbols.subarray(imp.name_offset)));
+			case 'IMPORT': {
+				this.imports2 = binary.withNames(binary.readn(imports, dyld_chained_import, this.imports_count), imp => binary.utils.decodeTextTo0(this.symbols.subarray(Number(imp.name_offset))));
 				break;
+			}
 			case 'IMPORT_ADDEND':
-				this.imports = binary.withNames(binary.readn(imports, dyld_chained_import_addend, this.imports_count), imp => binary.utils.decodeTextTo0(this.symbols.subarray(imp.import.name_offset)));
+				this.imports2 = binary.withNames(binary.readn(imports, dyld_chained_import_addend, this.imports_count), imp => binary.utils.decodeTextTo0(this.symbols.subarray(Number(imp.import.name_offset))));
 				break;
 			case 'IMPORT_ADDEND64':
-				this.imports = binary.withNames(binary.readn(imports, dyld_chained_import_addend64, this.imports_count), imp => binary.utils.decodeTextTo0(this.symbols.subarray(imp.import.name_offset)));
+				this.imports2 = binary.withNames(binary.readn(imports, dyld_chained_import_addend64, this.imports_count), imp => binary.utils.decodeTextTo0(this.symbols.subarray(Number(imp.import.name_offset))));
 				break;
 		}
 	}
@@ -1012,7 +1053,7 @@ export class MachFile {
 	}
 
 	async load(data: Uint8Array, be: boolean, bits: 32|64, mem?: binary.memory) {
-		const file	= new binary.stream_endian(data, be);
+		const file	= new binary.endianStream(data, be);
 		const h 	= binary.read(file, header);
 		const cpu	= CPU_TYPE[h.cputype as keyof typeof CPU_TYPE];
 		h.cpusubtype = binary.Enum(CPU_SUBTYPES[cpu])(+h.cpusubtype);
@@ -1036,61 +1077,7 @@ export class MachFile {
 				array[i] = (acc += BigInt(array[i]));
 		}
 	}
-/*
-	getCommand(cmd: CMD.SEGMENT): 					binary.ReadType<typeof cmd_table[CMD.SEGMENT]>;
-	getCommand(cmd: CMD.SYMTAB): 					binary.ReadType<typeof cmd_table[CMD.SYMTAB]>;
-	getCommand(cmd: CMD.SYMSEG): 					binary.ReadType<typeof cmd_table[CMD.SYMSEG]>;
-//	getCommand(cmd: CMD.THREAD): 					binary.ReadType<typeof cmd_table[CMD.THREAD]>;
-//	getCommand(cmd: CMD.UNIXTHREAD): 				binary.ReadType<typeof cmd_table[CMD.UNIXTHREAD]>;
-	getCommand(cmd: CMD.LOADFVMLIB): 				binary.ReadType<typeof cmd_table[CMD.LOADFVMLIB]>;
-	getCommand(cmd: CMD.IDFVMLIB): 					binary.ReadType<typeof cmd_table[CMD.IDFVMLIB]>;
-//	getCommand(cmd: CMD.IDENT): 					binary.ReadType<typeof cmd_table[CMD.IDENT]>;
-	getCommand(cmd: CMD.FVMFILE): 					binary.ReadType<typeof cmd_table[CMD.FVMFILE]>;
-//	getCommand(cmd: CMD.PREPAGE): 					binary.ReadType<typeof cmd_table[CMD.PREPAGE]>;
-	getCommand(cmd: CMD.DYSYMTAB): 					binary.ReadType<typeof cmd_table[CMD.DYSYMTAB]>;
-	getCommand(cmd: CMD.LOAD_DYLIB): 				binary.ReadType<typeof cmd_table[CMD.LOAD_DYLIB]>;
-	getCommand(cmd: CMD.ID_DYLIB): 					binary.ReadType<typeof cmd_table[CMD.ID_DYLIB]>;
-	getCommand(cmd: CMD.LOAD_DYLINKER): 			binary.ReadType<typeof cmd_table[CMD.LOAD_DYLINKER]>;
-	getCommand(cmd: CMD.ID_DYLINKER): 				binary.ReadType<typeof cmd_table[CMD.ID_DYLINKER]>;
-	getCommand(cmd: CMD.PREBOUND_DYLIB): 			binary.ReadType<typeof cmd_table[CMD.PREBOUND_DYLIB]>;
-	getCommand(cmd: CMD.ROUTINES): 					binary.ReadType<typeof cmd_table[CMD.ROUTINES]>;
-	getCommand(cmd: CMD.SUB_FRAMEWORK): 			binary.ReadType<typeof cmd_table[CMD.SUB_FRAMEWORK]>;
-	getCommand(cmd: CMD.SUB_UMBRELLA): 				binary.ReadType<typeof cmd_table[CMD.SUB_UMBRELLA]>;
-	getCommand(cmd: CMD.SUB_CLIENT): 				binary.ReadType<typeof cmd_table[CMD.SUB_CLIENT]>;
-	getCommand(cmd: CMD.SUB_LIBRARY): 				binary.ReadType<typeof cmd_table[CMD.SUB_LIBRARY]>;
-	getCommand(cmd: CMD.TWOLEVEL_HINTS): 			binary.ReadType<typeof cmd_table[CMD.TWOLEVEL_HINTS]>;
-	getCommand(cmd: CMD.PREBIND_CKSUM): 			binary.ReadType<typeof cmd_table[CMD.PREBIND_CKSUM]>;
-	getCommand(cmd: CMD.LOAD_WEAK_DYLIB): 			binary.ReadType<typeof cmd_table[CMD.LOAD_WEAK_DYLIB]>;
-	getCommand(cmd: CMD.SEGMENT_64): 				binary.ReadType<typeof cmd_table[CMD.SEGMENT_64]>;
-	getCommand(cmd: CMD.ROUTINES_64): 				binary.ReadType<typeof cmd_table[CMD.ROUTINES_64]>;
-	getCommand(cmd: CMD.UUID): 						binary.ReadType<typeof cmd_table[CMD.UUID]>;
-	getCommand(cmd: CMD.RPATH): 					binary.ReadType<typeof cmd_table[CMD.RPATH]>;
-	getCommand(cmd: CMD.CODE_SIGNATURE): 			binary.ReadType<typeof cmd_table[CMD.CODE_SIGNATURE]>;
-	getCommand(cmd: CMD.SEGMENT_SPLIT_INFO): 		binary.ReadType<typeof cmd_table[CMD.SEGMENT_SPLIT_INFO]>;
-	getCommand(cmd: CMD.REEXPORT_DYLIB): 			binary.ReadType<typeof cmd_table[CMD.REEXPORT_DYLIB]>;
-	getCommand(cmd: CMD.LAZY_LOAD_DYLIB): 			binary.ReadType<typeof cmd_table[CMD.LAZY_LOAD_DYLIB]>;
-	getCommand(cmd: CMD.ENCRYPTION_INFO): 			binary.ReadType<typeof cmd_table[CMD.ENCRYPTION_INFO]>;
-	getCommand(cmd: CMD.DYLD_INFO): 				binary.ReadType<typeof cmd_table[CMD.DYLD_INFO]>;
-	getCommand(cmd: CMD.DYLD_INFO_ONLY): 			binary.ReadType<typeof cmd_table[CMD.DYLD_INFO_ONLY]>;
-	getCommand(cmd: CMD.LOAD_UPWARD_DYLIB): 		binary.ReadType<typeof cmd_table[CMD.LOAD_UPWARD_DYLIB]>;
-	getCommand(cmd: CMD.VERSION_MIN_MACOSX): 		binary.ReadType<typeof cmd_table[CMD.VERSION_MIN_MACOSX]>;
-	getCommand(cmd: CMD.VERSION_MIN_IPHONEOS): 		binary.ReadType<typeof cmd_table[CMD.VERSION_MIN_IPHONEOS]>;
-	getCommand(cmd: CMD.FUNCTION_STARTS): 			binary.ReadType<typeof cmd_table[CMD.FUNCTION_STARTS]>;
-	getCommand(cmd: CMD.DYLD_ENVIRONMENT): 			binary.ReadType<typeof cmd_table[CMD.DYLD_ENVIRONMENT]>;
-	getCommand(cmd: CMD.MAIN): 						binary.ReadType<typeof cmd_table[CMD.MAIN]>;
-	getCommand(cmd: CMD.DATA_IN_CODE): 				binary.ReadType<typeof cmd_table[CMD.DATA_IN_CODE]>;
-	getCommand(cmd: CMD.SOURCE_VERSION): 			binary.ReadType<typeof cmd_table[CMD.SOURCE_VERSION]>;
-	getCommand(cmd: CMD.DYLIB_CODE_SIGN_DRS): 		binary.ReadType<typeof cmd_table[CMD.DYLIB_CODE_SIGN_DRS]>;
-	getCommand(cmd: CMD.ENCRYPTION_INFO_64): 		binary.ReadType<typeof cmd_table[CMD.ENCRYPTION_INFO_64]>;
-	getCommand(cmd: CMD.LINKER_OPTION): 			binary.ReadType<typeof cmd_table[CMD.LINKER_OPTION]>;
-	getCommand(cmd: CMD.LINKER_OPTIMIZATION_HINT): 	binary.ReadType<typeof cmd_table[CMD.LINKER_OPTIMIZATION_HINT]>;
-	getCommand(cmd: CMD.VERSION_MIN_TVOS): 			binary.ReadType<typeof cmd_table[CMD.VERSION_MIN_TVOS]>;
-	getCommand(cmd: CMD.VERSION_MIN_WATCHOS): 		binary.ReadType<typeof cmd_table[CMD.VERSION_MIN_WATCHOS]>;
-	getCommand(cmd: CMD.NOTE): 						binary.ReadType<typeof cmd_table[CMD.NOTE]>;
-	getCommand(cmd: CMD.BUILD_VERSION): 			binary.ReadType<typeof cmd_table[CMD.BUILD_VERSION]>;
-	getCommand(cmd: CMD.DYLD_EXPORTS_TRIE): 		binary.ReadType<typeof cmd_table[CMD.DYLD_EXPORTS_TRIE]>;
-	getCommand(cmd: CMD.DYLD_CHAINED_FIXUPS): 		binary.ReadType<typeof cmd_table[CMD.DYLD_CHAINED_FIXUPS]>;
-*/
+	
 	getCommand<T extends CMD>(cmd: T) : binary.ReadType<typeof cmd_table[T]>;
 	getCommand(cmd: CMD) {
 		for (const i of this.commands) {
@@ -1099,13 +1086,7 @@ export class MachFile {
 		}
 	}
 
-	getSegment(name: string) : binary.ReadType<ReturnType<typeof segment>> | undefined {
-		for (const i of this.commands) {
-			if ((i.cmd === CMD.SEGMENT || i.cmd === CMD.SEGMENT_64) && i.data.segname === name)
-				return i.data;
-		}
-	}
-	getSegment2(name: string) {//}: binary.ReadType<ReturnType<typeof segment>> | undefined {
+	getSegment(name: string) {
 		for (const i of this.commands) {
 			if (i.cmd === CMD.SEGMENT && i.data.segname === name)
 				return i.data as binary.ReadType<typeof cmd_table[CMD.SEGMENT]>;
@@ -1133,14 +1114,14 @@ export class FATMachFile {
 	
 	constructor(data: Uint8Array, mem?: binary.memory) {
 		switch (binary.UINT32_BE.get(new binary.stream(data))) {
-			case FAT_MAGIC:		this.load(new binary.stream_endian(data, false), mem); break;
-			case FAT_CIGAM:		this.load(new binary.stream_endian(data, true), mem); break;
+			case FAT_MAGIC:		this.load(new binary.endianStream(data, false), mem); break;
+			case FAT_CIGAM:		this.load(new binary.endianStream(data, true), mem); break;
 			default:
 				throw new Error('not a fat mach file');
 		}
 	}
 
-	load(file: binary.stream_endian, mem?: binary.memory) {
+	load(file: binary.endianStream, mem?: binary.memory) {
 		const header = binary.read(file, fat_header);
 		this.archs = header.archs;
 		for (const arch of header.archs) {
@@ -1151,4 +1132,9 @@ export class FATMachFile {
 		}
 	}
 }
-
+/*
+export function freestanding<T extends CMD>(s: binary.stream, cmd: T) : binary.ReadType<typeof cmd_table[T]>;
+export function freestanding(s: binary.stream, cmd: CMD) {
+	return binary.read(s, cmd_table[cmd]);
+}
+*/

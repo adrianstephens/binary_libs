@@ -565,45 +565,7 @@ export class CLR {
 		}
 	}
 
-	getTable(t: TABLE.Module):					binary.ReadType<typeof TableReaders[TABLE.Module]>[];
-	getTable(t: TABLE.TypeRef):					binary.ReadType<typeof TableReaders[TABLE.TypeRef]>[];
-	getTable(t: TABLE.TypeDef):					binary.ReadType<typeof TableReaders[TABLE.TypeDef]>[];
-	getTable(t: TABLE.Field):					binary.ReadType<typeof TableReaders[TABLE.Field]>[];
-	getTable(t: TABLE.MethodDef):				binary.ReadType<typeof TableReaders[TABLE.MethodDef]>[];
-	getTable(t: TABLE.Param):					binary.ReadType<typeof TableReaders[TABLE.Param]>[];
-	getTable(t: TABLE.InterfaceImpl):			binary.ReadType<typeof TableReaders[TABLE.InterfaceImpl]>[];
-	getTable(t: TABLE.MemberRef):				binary.ReadType<typeof TableReaders[TABLE.MemberRef]>[];
-	getTable(t: TABLE.Constant):				binary.ReadType<typeof TableReaders[TABLE.Constant]>[];
-	getTable(t: TABLE.CustomAttribute):			binary.ReadType<typeof TableReaders[TABLE.CustomAttribute]>[];
-	getTable(t: TABLE.FieldMarshal):			binary.ReadType<typeof TableReaders[TABLE.FieldMarshal]>[];
-	getTable(t: TABLE.DeclSecurity):			binary.ReadType<typeof TableReaders[TABLE.DeclSecurity]>[];
-	getTable(t: TABLE.ClassLayout):				binary.ReadType<typeof TableReaders[TABLE.ClassLayout]>[];
-	getTable(t: TABLE.FieldLayout):				binary.ReadType<typeof TableReaders[TABLE.FieldLayout]>[];
-	getTable(t: TABLE.StandAloneSig):			binary.ReadType<typeof TableReaders[TABLE.StandAloneSig]>[];
-	getTable(t: TABLE.EventMap):				binary.ReadType<typeof TableReaders[TABLE.EventMap]>[];
-	getTable(t: TABLE.Event):					binary.ReadType<typeof TableReaders[TABLE.Event]>[];
-	getTable(t: TABLE.PropertyMap):				binary.ReadType<typeof TableReaders[TABLE.PropertyMap]>[];
-	getTable(t: TABLE.Property):				binary.ReadType<typeof TableReaders[TABLE.Property]>[];
-	getTable(t: TABLE.MethodSemantics):			binary.ReadType<typeof TableReaders[TABLE.MethodSemantics]>[];
-	getTable(t: TABLE.MethodImpl):				binary.ReadType<typeof TableReaders[TABLE.MethodImpl]>[];
-	getTable(t: TABLE.ModuleRef):				binary.ReadType<typeof TableReaders[TABLE.ModuleRef]>[];
-	getTable(t: TABLE.TypeSpec):				binary.ReadType<typeof TableReaders[TABLE.TypeSpec]>[];
-	getTable(t: TABLE.ImplMap):					binary.ReadType<typeof TableReaders[TABLE.ImplMap]>[];
-	getTable(t: TABLE.FieldRVA):				binary.ReadType<typeof TableReaders[TABLE.FieldRVA]>[];
-	getTable(t: TABLE.Assembly):				binary.ReadType<typeof TableReaders[TABLE.Assembly]>[];
-	getTable(t: TABLE.AssemblyProcessor):		binary.ReadType<typeof TableReaders[TABLE.AssemblyProcessor]>[];
-	getTable(t: TABLE.AssemblyOS):				binary.ReadType<typeof TableReaders[TABLE.AssemblyOS]>[];
-	getTable(t: TABLE.AssemblyRef):				binary.ReadType<typeof TableReaders[TABLE.AssemblyRef]>[];
-	getTable(t: TABLE.AssemblyRefProcessor):	binary.ReadType<typeof TableReaders[TABLE.AssemblyRefProcessor]>[];
-	getTable(t: TABLE.AssemblyRefOS):			binary.ReadType<typeof TableReaders[TABLE.AssemblyRefOS]>[];
-	getTable(t: TABLE.File):					binary.ReadType<typeof TableReaders[TABLE.File]>[];
-	getTable(t: TABLE.ExportedType):			binary.ReadType<typeof TableReaders[TABLE.ExportedType]>[];
-	getTable(t: TABLE.ManifestResource):		binary.ReadType<typeof TableReaders[TABLE.ManifestResource]>[];
-	getTable(t: TABLE.NestedClass):				binary.ReadType<typeof TableReaders[TABLE.NestedClass]>[];
-	getTable(t: TABLE.GenericParam):			binary.ReadType<typeof TableReaders[TABLE.GenericParam]>[];
-	getTable(t: TABLE.MethodSpec):				binary.ReadType<typeof TableReaders[TABLE.MethodSpec]>[];
-	getTable(t: TABLE.GenericParamConstraint):	binary.ReadType<typeof TableReaders[TABLE.GenericParamConstraint]>[];
-//	getTable<T extends TABLE> (t: T):			binary.ReadType<typeof TableReaders[T]>[];
+	getTable<T extends TABLE> (t: T): binary.ReadType<typeof TableReaders[T]>[];
 	getTable(t: TABLE) {
 		const table = this.tables[t];
 		if (table) {
