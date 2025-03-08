@@ -9,6 +9,10 @@
     "./mach": "./dist/mach.js",
     "./pe": "./dist/pe.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "lint": "eslint \"src/**/*.ts\"",
@@ -36,5 +40,5 @@
   "dependencies": {
     "@isopodlabs/binary": "^1.0.3"
   },
-  "version": "0.1.1"
+  "version": "0.1.2"
 }
