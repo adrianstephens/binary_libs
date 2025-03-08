@@ -12,8 +12,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "echo \"No tests specified\" && exit 0",
-    "postinstall": "ts-patch install"
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [
     "binary",
@@ -37,5 +36,5 @@
   "dependencies": {
     "@isopodlabs/binary": "^1.0.3"
   },
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
