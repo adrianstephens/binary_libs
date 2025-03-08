@@ -241,7 +241,7 @@ const fat_header = {
 };
 
 const REQ_DYLD = 0x80000000;
-const enum CMD {
+export const enum CMD {
 	SEGMENT						= 0x01,				// segment of this file to be mapped
 	SYMTAB						= 0x02,				// link-edit stab symbol table info
 	SYMSEG						= 0x03,				// link-edit gdb symbol table info (obsolete)
