@@ -16,7 +16,7 @@
         "afterDeclarations": true
       }
     ]
-    },
+  },
   "include": [
     "src/**/*.ts"
   ],

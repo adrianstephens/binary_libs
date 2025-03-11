@@ -218,9 +218,9 @@ const HEADER_FLAGS = {
 
 const header = {
 	magic:		uint32,			// mach magic number identifier
-	cputype:	 	binary.as(uint32, binary.Enum(CPU_TYPE)),
+	cputype:	binary.as(uint32, binary.Enum(CPU_TYPE)),
 	cpusubtype:	binary.as(uint32, (x: number): number|string => x),//binary.Enum(CPU_SUBTYPE)),
-	filetype:		binary.as(uint32, binary.Enum(FILETYPE)),
+	filetype:	binary.as(uint32, binary.Enum(FILETYPE)),
 	ncmds:		uint32,			// number of load commands
 	sizeofcmds:	uint32,			// the size of all the load commands
 	flags:		binary.as(uint32, binary.Flags(HEADER_FLAGS, true))
@@ -1025,10 +1025,6 @@ const cmd_table = {//: Record<CMD, binary.TypeReader2> = {
 };
 
 export class MachFile {
-	header:		any;
-	commands:{cmd:CMD, data:any}[]	= [];
-	ready:		Promise<void>;
-
 	static check(data: Uint8Array): boolean {
 		switch (binary.UINT32_BE.get(new binary.stream(data))) {
 			case 0xfeedface:
@@ -1041,18 +1037,21 @@ export class MachFile {
 		}
 	}
 
+	header!: binary.ReadType<typeof header>;
+	private commands:{cmd:CMD, data:any}[]	= [];
+
 	constructor(data: Uint8Array, mem?: binary.memory) {
 		const magic	= binary.UINT32_LE.get(new binary.stream(data));
 		switch (magic) {
-			case 0xfeedface:	this.ready = this.load(data, false, 32, mem); break;
-			case 0xcefaedfe:	this.ready = this.load(data, true,  32, mem); break;
-			case 0xfeedfacf:	this.ready = this.load(data, false, 64, mem); break;
-			case 0xcffaedfe:	this.ready = this.load(data, true,  64, mem); break;
+			case 0xfeedface:	this.load(data, false, 32, mem); break;
+			case 0xcefaedfe:	this.load(data, true,  32, mem); break;
+			case 0xfeedfacf:	this.load(data, false, 64, mem); break;
+			case 0xcffaedfe:	this.load(data, true,  64, mem); break;
 			default:			throw new Error('not a mach file');
 		}
 	}
 
-	async load(data: Uint8Array, be: boolean, bits: 32|64, mem?: binary.memory) {
+	load(data: Uint8Array, be: boolean, bits: 32|64, mem?: binary.memory) {
 		const file	= new binary.endianStream(data, be);
 		const h 	= binary.read(file, header);
 		const cpu	= CPU_TYPE[h.cputype as keyof typeof CPU_TYPE];
@@ -1063,7 +1062,7 @@ export class MachFile {
 		for (let i = 0; i < h.ncmds; ++i) {
 			const cmd	= binary.read(file, command);
 			const file2	= new mach_stream(data, file.read_buffer(cmd.cmdsize - 8), file.be, mem);
-			const result = await binary.read(file2, cmd_table[cmd.cmd] ?? {});
+			const result = binary.read(file2, cmd_table[cmd.cmd] ?? {});
 			this.commands.push({cmd: cmd.cmd, data: result});
 		}
 		this.header = h;
@@ -1071,7 +1070,7 @@ export class MachFile {
 		const funcs = this.getCommand(CMD.FUNCTION_STARTS);
 		if (funcs) {
 			const array = funcs.contents;
-			const text	= await this.getSegment('__TEXT');
+			const text	= this.getSegment('__TEXT');
 			let acc	= BigInt(text?.vmaddr ?? 0);
 			for (const i in array)
 				array[i] = (acc += BigInt(array[i]));

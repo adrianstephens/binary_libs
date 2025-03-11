@@ -201,34 +201,38 @@ const CustomAttributeValue	= clr_Blob;
 
 const clr_Code = binary.UINT32_LE;
 
-class Indexed {
-	constructor(public table:number)	{}
-	get(s: clr_stream) 				{ return s.getIndex(this.table); }
+function Indexed(table: number) {
+	return {
+		get(s: clr_stream) 				{ return s.getIndex(table); }
+	};
 }
-class IndexedList extends Indexed {
-	get(s: clr_stream) 				{ return s.getIndex(this.table); }
+function IndexedList(table: number) {
+	return {
+		get(s: clr_stream) 				{ return s.getIndex(table); }
+	};
 }
-class CodedIndex {
-	constructor(public trans:number[], public B:number)	{}
-	get(s: clr_stream) 				{ return s.getCodedIndex(this.B, this.trans); }
+function CodedIndex(trans: number[], B: number)	{
+	return {
+		get(s: clr_stream) 				{ return s.getCodedIndex(B, trans); }
+	};
 }
 
-const TypeDefOrRef			= new CodedIndex([TABLE.TypeDef, TABLE.TypeRef, TABLE.TypeSpec], 2);
-const HasConstant			= new CodedIndex([TABLE.Field, TABLE.Param, TABLE.Property], 2);
-const HasCustomAttribute	= new CodedIndex([
+const TypeDefOrRef			= CodedIndex([TABLE.TypeDef, TABLE.TypeRef, TABLE.TypeSpec], 2);
+const HasConstant			= CodedIndex([TABLE.Field, TABLE.Param, TABLE.Property], 2);
+const HasCustomAttribute	= CodedIndex([
 	TABLE.MethodDef, TABLE.Field, TABLE.TypeRef, TABLE.TypeDef, TABLE.Param, TABLE.InterfaceImpl, TABLE.MemberRef, TABLE.Module, TABLE.DeclSecurity, TABLE.Property, TABLE.Event, TABLE.StandAloneSig,
 	TABLE.ModuleRef, TABLE.TypeSpec, TABLE.Assembly, TABLE.AssemblyRef, TABLE.File, TABLE.ExportedType, TABLE.ManifestResource, TABLE.GenericParam, TABLE.GenericParamConstraint, TABLE.MethodSpec,
 ], 5);
-const HasFieldMarshall		= new CodedIndex([TABLE.Field, TABLE.Param], 1);
-const HasDeclSecurity		= new CodedIndex([TABLE.TypeDef, TABLE.MethodDef, TABLE.Assembly], 2);
-const MemberRefParent		= new CodedIndex([TABLE.TypeDef, TABLE.TypeRef, TABLE.ModuleRef, TABLE.MethodDef, TABLE.TypeSpec], 1);
-const HasSemantics			= new CodedIndex([TABLE.Event, TABLE.Property], 1);
-const MethodDefOrRef		= new CodedIndex([TABLE.MethodDef, TABLE.MemberRef], 1);
-const MemberForwarded		= new CodedIndex([TABLE.Field, TABLE.MethodDef], 1);
-const Implementation		= new CodedIndex([TABLE.File, TABLE.AssemblyRef, TABLE.ExportedType], 2);
-const CustomAttributeType	= new CodedIndex([0, 0, TABLE.MethodDef, TABLE.MemberRef], 3);
-const TypeOrMethodDef		= new CodedIndex([TABLE.TypeDef, TABLE.MethodDef], 1);
-const ResolutionScope		= new CodedIndex([TABLE.Module, TABLE.ModuleRef, TABLE.AssemblyRef, TABLE.TypeRef], 2);
+const HasFieldMarshall		= CodedIndex([TABLE.Field, TABLE.Param], 1);
+const HasDeclSecurity		= CodedIndex([TABLE.TypeDef, TABLE.MethodDef, TABLE.Assembly], 2);
+const MemberRefParent		= CodedIndex([TABLE.TypeDef, TABLE.TypeRef, TABLE.ModuleRef, TABLE.MethodDef, TABLE.TypeSpec], 1);
+const HasSemantics			= CodedIndex([TABLE.Event, TABLE.Property], 1);
+const MethodDefOrRef		= CodedIndex([TABLE.MethodDef, TABLE.MemberRef], 1);
+const MemberForwarded		= CodedIndex([TABLE.Field, TABLE.MethodDef], 1);
+const Implementation		= CodedIndex([TABLE.File, TABLE.AssemblyRef, TABLE.ExportedType], 2);
+const CustomAttributeType	= CodedIndex([0, 0, TABLE.MethodDef, TABLE.MemberRef], 3);
+const TypeOrMethodDef		= CodedIndex([TABLE.TypeDef, TABLE.MethodDef], 1);
+const ResolutionScope		= CodedIndex([TABLE.Module, TABLE.ModuleRef, TABLE.AssemblyRef, TABLE.TypeRef], 2);
 
 const ENTRY_Module = {
 	generation:	binary.UINT16_LE,
@@ -247,8 +251,8 @@ const ENTRY_TypeDef = {
 	name:		clr_String,
 	namespce:	clr_String,
 	extends:	TypeDefOrRef,
-	fields:		new IndexedList(TABLE.Field),
-	methods:	new IndexedList(TABLE.MethodDef),
+	fields:		IndexedList(TABLE.Field),
+	methods:	IndexedList(TABLE.MethodDef),
 };
 const ENTRY_Field = {
 	flags:		binary.UINT16_LE,
@@ -261,7 +265,7 @@ const ENTRY_MethodDef = {
 	flags:		binary.UINT16_LE,
 	name:		clr_String,
 	signature:	Signature,
-	paramlist:	new IndexedList(TABLE.Param),
+	paramlist:	IndexedList(TABLE.Param),
 };
 const ENTRY_Param = {
 	flags:		binary.UINT16_LE,
@@ -269,7 +273,7 @@ const ENTRY_Param = {
 	name:		clr_String,
 };
 const ENTRY_InterfaceImpl = {
-	clss:		new Indexed(TABLE.TypeDef),
+	clss:		Indexed(TABLE.TypeDef),
 	interfce:	TypeDefOrRef,
 };
 const ENTRY_MemberRef = {
@@ -278,79 +282,79 @@ const ENTRY_MemberRef = {
 	signature:	Signature,
 };
 const ENTRY_Constant = {
-	type:	binary.UINT16_LE,
-	parent:	HasConstant,
-	value:	clr_Blob,
+	type:		binary.UINT16_LE,
+	parent:		HasConstant,
+	value:		clr_Blob,
 };
 const ENTRY_CustomAttribute = {
-	parent:	HasCustomAttribute,
-	type:	CustomAttributeType,
-	value:	CustomAttributeValue,
-};
+	parent:		HasCustomAttribute,
+	type:		CustomAttributeType,
+	value:		CustomAttributeValue,
+};	
 const ENTRY_FieldMarshal = {
-	parent:	HasFieldMarshall,
+	parent:			HasFieldMarshall,
 	native_type:	clr_Blob,
 };
 const ENTRY_DeclSecurity = {
-	action:	binary.UINT16_LE,
-	parent:	HasDeclSecurity,
+	action:			binary.UINT16_LE,
+	parent:			HasDeclSecurity,
 	permission_set:	clr_Blob,
 };
 const ENTRY_ClassLayout = {
 	packing_size:	binary.UINT16_LE,
 	class_size:		binary.UINT32_LE,
-	parent:			new Indexed(TABLE.TypeDef),
+	parent:			Indexed(TABLE.TypeDef),
 };
 const ENTRY_FieldLayout = {
-	offset:	binary.UINT32_LE,
-	field:	new Indexed(TABLE.Field),
+	offset:			binary.UINT32_LE,
+	field:			Indexed(TABLE.Field),
 };
 const ENTRY_StandAloneSig = {
-	signature:	Signature,
+	signature:		Signature,
 };
 const ENTRY_EventMap = {
-	parent:	new Indexed(TABLE.TypeDef),
-	event_list:	new IndexedList(TABLE.Event),
+	parent:			Indexed(TABLE.TypeDef),
+	event_list:		IndexedList(TABLE.Event),
 };
 const ENTRY_Event = {
-	flags:	binary.UINT16_LE,
-	name:	clr_String,
-	event_type:	TypeDefOrRef,
+	flags:			binary.UINT16_LE,
+	name:			clr_String,
+	event_type:		TypeDefOrRef,
 };
 const ENTRY_PropertyMap = {
-	parent:	new Indexed(TABLE.TypeDef),
-	property_list:	new IndexedList(TABLE.Property),
+	parent:			Indexed(TABLE.TypeDef),
+	property_list:	IndexedList(TABLE.Property),
 };
 const ENTRY_Property = {
-	flags:	binary.UINT16_LE,
-	name:	clr_String,
-	type:	Signature,
+	flags:			binary.UINT16_LE,
+	name:			clr_String,
+	type:			Signature,
 };
 const ENTRY_MethodSemantics = {
 	flags:			binary.UINT16_LE,
-	method:			new Indexed(TABLE.MethodDef),
+	method:			Indexed(TABLE.MethodDef),
 	association:	HasSemantics,
 };
 const ENTRY_MethodImpl = {
-	clss:			new Indexed(TABLE.TypeDef),
-	method_body:	MethodDefOrRef,
+	clss:				Indexed(TABLE.TypeDef),
+	method_body:		MethodDefOrRef,
 	method_declaration:	MethodDefOrRef,
 };
 const ENTRY_ModuleRef = {
-	name:		clr_String,
+	name:			clr_String,
 };
 const ENTRY_TypeSpec = {
-	signature:	clr_Blob,
+	signature:		clr_Blob,
 };
 const ENTRY_ImplMap = {
-	flags:		binary.UINT16_LE,
+	flags:				binary.UINT16_LE,
 	member_forwarded:	MemberForwarded,
-	name:		clr_String,
-	scope:		new Indexed(TABLE.ModuleRef),
+	name:				clr_String,
+	scope:				Indexed(TABLE.ModuleRef),
 };
 const ENTRY_FieldRVA = {
-	rva:	binary.UINT32_LE,
-	field:	new Indexed(TABLE.Field),
+	rva:		binary.UINT32_LE,
+	field:		Indexed(TABLE.Field),
 };
 const ENTRY_Assembly = {
 	hashalg:	binary.UINT32_LE,
@@ -384,13 +388,13 @@ const ENTRY_AssemblyRef = {
 };
 const ENTRY_AssemblyRefProcessor = {
 	processor:	binary.UINT32_LE,
-	assembly:	new Indexed(TABLE.AssemblyRef),
+	assembly:	Indexed(TABLE.AssemblyRef),
 };
 const ENTRY_AssemblyRefOS = {
 	platform:	binary.UINT32_LE,
 	major:		binary.UINT32_LE,
 	minor:		binary.UINT32_LE,
-	assembly:	new Indexed(TABLE.AssemblyRef),
+	assembly:	Indexed(TABLE.AssemblyRef),
 };
 const ENTRY_File = {
 	flags:		binary.UINT32_LE,
@@ -405,27 +409,27 @@ const ENTRY_ExportedType = {
 	implementation:	Implementation,
 };
 const ENTRY_ManifestResource = {
-	data:	binary.UINT32_LE,
-	flags:	binary.UINT32_LE,
-	name:	clr_String,
+	data:			binary.UINT32_LE,
+	flags:			binary.UINT32_LE,
+	name:			clr_String,
 	implementation:	Implementation,
 };
 const ENTRY_NestedClass = {
-	nested_class:		new Indexed(TABLE.TypeDef),
-	enclosing_class:	new Indexed(TABLE.TypeDef),
+	nested_class:		Indexed(TABLE.TypeDef),
+	enclosing_class:	Indexed(TABLE.TypeDef),
 };
 const ENTRY_GenericParam = {
-	number:	binary.UINT16_LE,
-	flags:	binary.UINT16_LE,
-	owner:	TypeOrMethodDef,
-	name:	clr_String,
+	number:			binary.UINT16_LE,
+	flags:			binary.UINT16_LE,
+	owner:			TypeOrMethodDef,
+	name:			clr_String,
 };
 const ENTRY_MethodSpec = {
 	method:			MethodDefOrRef,
 	instantiation:	Signature,
 };
 const ENTRY_GenericParamConstraint = {
-	owner:			new Indexed(TABLE.GenericParam),
+	owner:			Indexed(TABLE.GenericParam),
 	constraint:		TypeDefOrRef,
 };
 
@@ -471,9 +475,9 @@ const TableReaders = {
 };
 
 const ResourceManagerHeader = {
-	magic:		binary.UINT32_LE,
-	version:	binary.UINT32_LE,
-	skip:		binary.UINT32_LE,
+	magic:			binary.UINT32_LE,
+	version:		binary.UINT32_LE,
+	skip:			binary.UINT32_LE,
 };
 
 const ResourceManager = {
@@ -485,29 +489,20 @@ const ResourceManager = {
 };
 
 const ResourceEntry = {
-	name:		binary.StringType(binary.UINT8, 'utf16le', false, 1),
-	offset:		binary.UINT32_LE,
+	name:			binary.StringType(binary.UINT8, 'utf16le', false, 1),
+	offset:			binary.UINT32_LE,
 };
 
 interface Table { count: number, size: number, offset: number }
 
 export class CLR {
-	header:		any;
-	table_info:	any;
+	private raw?:		Uint8Array;
+	header;
+	table_info;
 	heaps:		Uint8Array[] = [];
 	tables!:	Record<TABLE, Table>;
-	raw?:		Uint8Array;
 	Resources?:	Uint8Array;
-/*
-	static async load(dll: string) {
-		const p = await pe.PE.load(dll);
-		if (p) {
-			const clr_data = p.GetDataDir(p.opt.DataDirectory.CLR_DESCRIPTOR);
-			if (clr_data)
-				return new CLR(p, clr_data);
-		}
-	}
-*/
+
 	constructor(pe: pe.PE, clr_data: Uint8Array) {
 		this.header		= binary.read(new binary.stream(clr_data), CLR_HEADER);
 		const meta_data	= pe.GetDataDir(this.header.MetaData);
@@ -556,20 +551,23 @@ export class CLR {
 		}
 	}
 
+	getEntry<T extends TABLE>(t: T, i: number): binary.ReadType<typeof TableReaders[T]>;
+	getEntry(t: TABLE, i: number): any;
 	getEntry(t: TABLE, i: number) : any {
 		const table = this.tables[t];
 		if (table) {
-			const stream2 = new clr_stream(this.raw!, this.heaps, this.table_info.HeapSizes, Object.values(this.tables).map(i => i.count));
+			const stream2 = new clr_stream(this.raw!, this.heaps, this.table_info!.HeapSizes, Object.values(this.tables).map(i => i.count));
 			stream2.seek(table.offset + i * table.size);
 			return binary.read(stream2, TableReaders[t]);
 		}
 	}
 
-	getTable<T extends TABLE> (t: T): binary.ReadType<typeof TableReaders[T]>[];
+	getTable<T extends TABLE>(t: T): binary.ReadType<typeof TableReaders[T]>[];
+	getTable(t: TABLE): any;
 	getTable(t: TABLE) {
 		const table = this.tables[t];
 		if (table) {
-			const stream2 = new clr_stream(this.raw!, this.heaps, this.table_info.HeapSizes, Object.values(this.tables).map(i => i.count));
+			const stream2 = new clr_stream(this.raw!, this.heaps, this.table_info!.HeapSizes, Object.values(this.tables).map(i => i.count));
 			stream2.seek(table.offset);
 			const result: any[] = [];
 			for (let i = 0; i < table.count; i++)
@@ -596,7 +594,7 @@ export class CLR {
 
 	allResources() {
 		if (this.Resources) {
-			const result = {};
+			const result = {} as any;
 			for (const i of this.getTable(TABLE.ManifestResource)!) {
 				const data0 	= new binary.stream(this.Resources.subarray(i.data));
 				const size 		= binary.UINT32_LE.get(data0);

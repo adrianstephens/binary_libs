@@ -1,5 +1,4 @@
 import * as binary from '@isopodlabs/binary';
-import * as path from 'path';
 
 class MyDate extends Date {
 	constructor(x: number) { super(x * 1000); }
@@ -265,15 +264,15 @@ const OPTIONAL_HEADER64 = {
 };
 
 export class PE {
-	header:		binary.ReadType<typeof DOS_HEADER> & binary.ReadType<typeof EXE_HEADER>;
-	opt?:		binary.ReadType<typeof OPTIONAL_HEADER> & (binary.ReadType<typeof OPTIONAL_HEADER32> | binary.ReadType<typeof OPTIONAL_HEADER64>);
-	sections:	Section[];
-
 	static check(data: Uint8Array): boolean {
 		return uint16.get(new binary.stream(data)) === binary.utils.stringCode("MZ");
 	}
 
-	constructor(private data: Uint8Array) {
+	header:		binary.ReadType<typeof DOS_HEADER> & binary.ReadType<typeof EXE_HEADER>;
+	opt?:		binary.ReadType<typeof OPTIONAL_HEADER> & (binary.ReadType<typeof OPTIONAL_HEADER32> | binary.ReadType<typeof OPTIONAL_HEADER64>);
+	sections:	Section[];
+
+	constructor(data: Uint8Array) {
 		const file	= new binary.stream(data);
 		this.header	= binary.read(file, {...DOS_HEADER, ...EXE_HEADER});
 
@@ -456,7 +455,7 @@ const RESOURCE_DIRECTORY = {
 	MinorVersion:			uint16,
 	NumberOfNamedEntries:	uint16,
 	NumberOfIdEntries:		uint16,
-	entries:				binary.ArrayType(obj=> obj.NumberOfNamedEntries + obj.NumberOfIdEntries, {
+	entries:				binary.ArrayType(s => s.obj.NumberOfNamedEntries + s.obj.NumberOfIdEntries, {
 		u0: uint32,
 		u1: uint32,
 	})

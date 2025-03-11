@@ -22,11 +22,12 @@ const SYM64 = {
 };
 
 export class ArchFile {
-	members: HEADER[] = [];
-
 	static check(data: Uint8Array): boolean {
 		return binary.utils.decodeText(data.subarray(0, 8), 'utf8') == '!<arch>\n';
 	}
+
+	members: HEADER[] = [];
+
 	constructor(data: Uint8Array) {
 		const s = new binary.stream(data);
 		const header = binary.read(s, binary.StringType(8));

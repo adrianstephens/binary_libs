@@ -16,7 +16,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "patch": "ts-patch install"
   },
   "keywords": [
     "binary",

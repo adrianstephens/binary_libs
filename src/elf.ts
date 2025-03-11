@@ -26,7 +26,7 @@ const Ident = {
 	file_class:	binary.asEnum(binary.UINT8, CLASS),
 	encoding:	binary.asEnum(binary.UINT8, DATA),
 	version:	binary.UINT8,
-	_: binary.If(obj=>obj.file_class === 'CLASS64', {
+	_: binary.If(s => s.obj.file_class === 'CLASS64', {
 		//64 bit only
 		osabi: 		binary.asEnum(binary.UINT8, OSABI),
 		abiversion: binary.UINT8,
@@ -622,14 +622,13 @@ function readDataAs<T extends binary.Type>(data: binary.MappedMemory | undefined
 }
 
 export class ELFFile {
-	segments;
-	sections;
-	header;
-
 	static check(data: Uint8Array): boolean {
 		return binary.utils.decodeText(data.subarray(0, 4), 'utf8') === '\x7fELF';
 	}
 
+	segments;
+	sections;
+	header;
 	getDynamic;
 	getRel;
 	getRelA;
