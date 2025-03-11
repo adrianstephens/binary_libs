@@ -234,244 +234,205 @@ const CustomAttributeType	= CodedIndex([0, 0, TABLE.MethodDef, TABLE.MemberRef],
 const TypeOrMethodDef		= CodedIndex([TABLE.TypeDef, TABLE.MethodDef], 1);
 const ResolutionScope		= CodedIndex([TABLE.Module, TABLE.ModuleRef, TABLE.AssemblyRef, TABLE.TypeRef], 2);
 
-const ENTRY_Module = {
-	generation:	binary.UINT16_LE,
-	name:		clr_String,
-	mvid:		clr_GUID,
-	encid:		clr_GUID,
-	encbaseid:	clr_GUID,
-};
-const ENTRY_TypeRef = {
-	scope:		ResolutionScope,
-	name:		clr_String,
-	namespce:	clr_String,
-};
-const ENTRY_TypeDef = {
-	flags:		binary.UINT32_LE,
-	name:		clr_String,
-	namespce:	clr_String,
-	extends:	TypeDefOrRef,
-	fields:		IndexedList(TABLE.Field),
-	methods:	IndexedList(TABLE.MethodDef),
-};
-const ENTRY_Field = {
-	flags:		binary.UINT16_LE,
-	name:		clr_String,
-	signature:	Signature,
-};
-const ENTRY_MethodDef = {
-	code:		clr_Code,
-	implflags:	binary.UINT16_LE,
-	flags:		binary.UINT16_LE,
-	name:		clr_String,
-	signature:	Signature,
-	paramlist:	IndexedList(TABLE.Param),
-};
-const ENTRY_Param = {
-	flags:		binary.UINT16_LE,
-	sequence:	binary.UINT16_LE,
-	name:		clr_String,
-};
-const ENTRY_InterfaceImpl = {
-	clss:		Indexed(TABLE.TypeDef),
-	interfce:	TypeDefOrRef,
-};
-const ENTRY_MemberRef = {
-	clss:		MemberRefParent,
-	name:		clr_String,
-	signature:	Signature,
-};
-const ENTRY_Constant = {
-	type:		binary.UINT16_LE,
-	parent:		HasConstant,
-	value:		clr_Blob,
-};
-const ENTRY_CustomAttribute = {
-	parent:		HasCustomAttribute,
-	type:		CustomAttributeType,
-	value:		CustomAttributeValue,
-};	
-const ENTRY_FieldMarshal = {
-	parent:			HasFieldMarshall,
-	native_type:	clr_Blob,
-};
-const ENTRY_DeclSecurity = {
-	action:			binary.UINT16_LE,
-	parent:			HasDeclSecurity,
-	permission_set:	clr_Blob,
-};
-const ENTRY_ClassLayout = {
-	packing_size:	binary.UINT16_LE,
-	class_size:		binary.UINT32_LE,
-	parent:			Indexed(TABLE.TypeDef),
-};
-const ENTRY_FieldLayout = {
-	offset:			binary.UINT32_LE,
-	field:			Indexed(TABLE.Field),
-};
-const ENTRY_StandAloneSig = {
-	signature:		Signature,
-};
-const ENTRY_EventMap = {
-	parent:			Indexed(TABLE.TypeDef),
-	event_list:		IndexedList(TABLE.Event),
-};
-const ENTRY_Event = {
-	flags:			binary.UINT16_LE,
-	name:			clr_String,
-	event_type:		TypeDefOrRef,
-};
-const ENTRY_PropertyMap = {
-	parent:			Indexed(TABLE.TypeDef),
-	property_list:	IndexedList(TABLE.Property),
-};
-const ENTRY_Property = {
-	flags:			binary.UINT16_LE,
-	name:			clr_String,
-	type:			Signature,
-};
-const ENTRY_MethodSemantics = {
-	flags:			binary.UINT16_LE,
-	method:			Indexed(TABLE.MethodDef),
-	association:	HasSemantics,
-};
-const ENTRY_MethodImpl = {
-	clss:				Indexed(TABLE.TypeDef),
-	method_body:		MethodDefOrRef,
-	method_declaration:	MethodDefOrRef,
-};
-const ENTRY_ModuleRef = {
-	name:			clr_String,
-};
-const ENTRY_TypeSpec = {
-	signature:		clr_Blob,
-};
-const ENTRY_ImplMap = {
-	flags:				binary.UINT16_LE,
-	member_forwarded:	MemberForwarded,
-	name:				clr_String,
-	scope:				Indexed(TABLE.ModuleRef),
-};
-const ENTRY_FieldRVA = {
-	rva:		binary.UINT32_LE,
-	field:		Indexed(TABLE.Field),
-};
-const ENTRY_Assembly = {
-	hashalg:	binary.UINT32_LE,
-	major:		binary.UINT16_LE,
-	minor:		binary.UINT16_LE,
-	build:		binary.UINT16_LE,
-	rev:		binary.UINT16_LE,
-	flags:		binary.UINT32_LE,
-	publickey:	clr_Blob,
-	name:		clr_String,
-	culture:	clr_String,
-};
-const ENTRY_AssemblyProcessor = {
-	processor:	binary.UINT32_LE,
-};
-const ENTRY_AssemblyOS = {
-	platform:	binary.UINT32_LE,
-	minor:		binary.UINT32_LE,
-	major:		binary.UINT32_LE,
-};
-const ENTRY_AssemblyRef = {
-	major:		binary.UINT16_LE,
-	minor:		binary.UINT16_LE,
-	build:		binary.UINT16_LE,
-	rev:		binary.UINT16_LE,
-	flags:		binary.UINT32_LE,
-	publickey:	clr_Blob,
-	name:		clr_String,
-	culture:	clr_String,
-	hashvalue:	clr_Blob,
-};
-const ENTRY_AssemblyRefProcessor = {
-	processor:	binary.UINT32_LE,
-	assembly:	Indexed(TABLE.AssemblyRef),
-};
-const ENTRY_AssemblyRefOS = {
-	platform:	binary.UINT32_LE,
-	major:		binary.UINT32_LE,
-	minor:		binary.UINT32_LE,
-	assembly:	Indexed(TABLE.AssemblyRef),
-};
-const ENTRY_File = {
-	flags:		binary.UINT32_LE,
-	name:		clr_String,
-	hash:		clr_Blob,
-};
-const ENTRY_ExportedType = {
-	flags:		binary.UINT32_LE,
-	typedef_id:	binary.UINT32_LE,//(a 4-byte index into a TypeDef table of another module in this Assembly).
-	name:		clr_String,
-	namespce:	clr_String,
-	implementation:	Implementation,
-};
-const ENTRY_ManifestResource = {
-	data:			binary.UINT32_LE,
-	flags:			binary.UINT32_LE,
-	name:			clr_String,
-	implementation:	Implementation,
-};
-const ENTRY_NestedClass = {
-	nested_class:		Indexed(TABLE.TypeDef),
-	enclosing_class:	Indexed(TABLE.TypeDef),
-};
-const ENTRY_GenericParam = {
-	number:			binary.UINT16_LE,
-	flags:			binary.UINT16_LE,
-	owner:			TypeOrMethodDef,
-	name:			clr_String,
-};
-const ENTRY_MethodSpec = {
-	method:			MethodDefOrRef,
-	instantiation:	Signature,
-};
-const ENTRY_GenericParamConstraint = {
-	owner:			Indexed(TABLE.GenericParam),
-	constraint:		TypeDefOrRef,
-};
-
 const TableReaders = {
-	[TABLE.Module]:					ENTRY_Module,
-	[TABLE.TypeRef]:				ENTRY_TypeRef,
-	[TABLE.TypeDef]:				ENTRY_TypeDef,
-	[TABLE.Field]:					ENTRY_Field,
-	[TABLE.MethodDef]:				ENTRY_MethodDef,
-	[TABLE.Param]:					ENTRY_Param,
-	[TABLE.InterfaceImpl]:			ENTRY_InterfaceImpl,
-	[TABLE.MemberRef]:				ENTRY_MemberRef,
-	[TABLE.Constant]:				ENTRY_Constant,
-	[TABLE.CustomAttribute]:		ENTRY_CustomAttribute,
-	[TABLE.FieldMarshal]:			ENTRY_FieldMarshal,
-	[TABLE.DeclSecurity]:			ENTRY_DeclSecurity,
-	[TABLE.ClassLayout]:			ENTRY_ClassLayout,
-	[TABLE.FieldLayout]:			ENTRY_FieldLayout,
-	[TABLE.StandAloneSig]:			ENTRY_StandAloneSig,
-	[TABLE.EventMap]:				ENTRY_EventMap,
-	[TABLE.Event]:					ENTRY_Event,
-	[TABLE.PropertyMap]:			ENTRY_PropertyMap,
-	[TABLE.Property]:				ENTRY_Property,
-	[TABLE.MethodSemantics]:		ENTRY_MethodSemantics,
-	[TABLE.MethodImpl]:				ENTRY_MethodImpl,
-	[TABLE.ModuleRef]:				ENTRY_ModuleRef,
-	[TABLE.TypeSpec]:				ENTRY_TypeSpec,
-	[TABLE.ImplMap]:				ENTRY_ImplMap,
-	[TABLE.FieldRVA]:				ENTRY_FieldRVA,
-	[TABLE.Assembly]:				ENTRY_Assembly,
-	[TABLE.AssemblyProcessor]:		ENTRY_AssemblyProcessor,
-	[TABLE.AssemblyOS]:				ENTRY_AssemblyOS,
-	[TABLE.AssemblyRef]:			ENTRY_AssemblyRef,
-	[TABLE.AssemblyRefProcessor]:	ENTRY_AssemblyRefProcessor,
-	[TABLE.AssemblyRefOS]:			ENTRY_AssemblyRefOS,
-	[TABLE.File]:					ENTRY_File,
-	[TABLE.ExportedType]:			ENTRY_ExportedType,
-	[TABLE.ManifestResource]:		ENTRY_ManifestResource,
-	[TABLE.NestedClass]:			ENTRY_NestedClass,
-	[TABLE.GenericParam]:			ENTRY_GenericParam,
-	[TABLE.MethodSpec]:				ENTRY_MethodSpec,
-	[TABLE.GenericParamConstraint]:	ENTRY_GenericParamConstraint,
+	[TABLE.Module]: {
+		generation:	binary.UINT16_LE,
+		name:		clr_String,
+		mvid:		clr_GUID,
+		encid:		clr_GUID,
+		encbaseid:	clr_GUID,
+	},
+	[TABLE.TypeRef]: {
+		scope:		ResolutionScope,
+		name:		clr_String,
+		namespce:	clr_String,
+	},
+	[TABLE.TypeDef]: {
+		flags:		binary.UINT32_LE,
+		name:		clr_String,
+		namespce:	clr_String,
+		extends:	TypeDefOrRef,
+		fields:		IndexedList(TABLE.Field),
+		methods:	IndexedList(TABLE.MethodDef),
+	},
+	[TABLE.Field]: {
+		flags:		binary.UINT16_LE,
+		name:		clr_String,
+		signature:	Signature,
+	},
+	[TABLE.MethodDef]: {
+		code:		clr_Code,
+		implflags:	binary.UINT16_LE,
+		flags:		binary.UINT16_LE,
+		name:		clr_String,
+		signature:	Signature,
+		paramlist:	IndexedList(TABLE.Param),
+	},
+	[TABLE.Param]: {
+		flags:		binary.UINT16_LE,
+		sequence:	binary.UINT16_LE,
+		name:		clr_String,
+	},
+	[TABLE.InterfaceImpl]: {
+		clss:		Indexed(TABLE.TypeDef),
+		interfce:	TypeDefOrRef,
+	},
+	[TABLE.MemberRef]: {
+		clss:		MemberRefParent,
+		name:		clr_String,
+		signature:	Signature,
+	},
+	[TABLE.Constant]: {
+		type:		binary.UINT16_LE,
+		parent:		HasConstant,
+		value:		clr_Blob,
+	},
+	[TABLE.CustomAttribute]: {
+		parent:		HasCustomAttribute,
+		type:		CustomAttributeType,
+		value:		CustomAttributeValue,
+	},	
+	[TABLE.FieldMarshal]: {
+		parent:			HasFieldMarshall,
+		native_type:	clr_Blob,
+	},
+	[TABLE.DeclSecurity]: {
+		action:			binary.UINT16_LE,
+		parent:			HasDeclSecurity,
+		permission_set:	clr_Blob,
+	},
+	[TABLE.ClassLayout]: {
+		packing_size:	binary.UINT16_LE,
+		class_size:		binary.UINT32_LE,
+		parent:			Indexed(TABLE.TypeDef),
+	},
+	[TABLE.FieldLayout]: {
+		offset:			binary.UINT32_LE,
+		field:			Indexed(TABLE.Field),
+	},
+	[TABLE.StandAloneSig]: {
+		signature:		Signature,
+	},
+	[TABLE.EventMap]: {
+		parent:			Indexed(TABLE.TypeDef),
+		event_list:		IndexedList(TABLE.Event),
+	},
+	[TABLE.Event]: {
+		flags:			binary.UINT16_LE,
+		name:			clr_String,
+		event_type:		TypeDefOrRef,
+	},
+	[TABLE.PropertyMap]: {
+		parent:			Indexed(TABLE.TypeDef),
+		property_list:	IndexedList(TABLE.Property),
+	},
+	[TABLE.Property]: {
+		flags:			binary.UINT16_LE,
+		name:			clr_String,
+		type:			Signature,
+	},
+	[TABLE.MethodSemantics]: {
+		flags:			binary.UINT16_LE,
+		method:			Indexed(TABLE.MethodDef),
+		association:	HasSemantics,
+	},
+	[TABLE.MethodImpl]: {
+		clss:				Indexed(TABLE.TypeDef),
+		method_body:		MethodDefOrRef,
+		method_declaration:	MethodDefOrRef,
+	},
+	[TABLE.ModuleRef]: {
+		name:			clr_String,
+	},
+	[TABLE.TypeSpec]: {
+		signature:		clr_Blob,
+	},
+	[TABLE.ImplMap]: {
+		flags:				binary.UINT16_LE,
+		member_forwarded:	MemberForwarded,
+		name:				clr_String,
+		scope:				Indexed(TABLE.ModuleRef),
+	},
+	[TABLE.FieldRVA]: {
+		rva:		binary.UINT32_LE,
+		field:		Indexed(TABLE.Field),
+	},
+	[TABLE.Assembly]: {
+		hashalg:	binary.UINT32_LE,
+		major:		binary.UINT16_LE,
+		minor:		binary.UINT16_LE,
+		build:		binary.UINT16_LE,
+		rev:		binary.UINT16_LE,
+		flags:		binary.UINT32_LE,
+		publickey:	clr_Blob,
+		name:		clr_String,
+		culture:	clr_String,
+	},
+	[TABLE.AssemblyProcessor]: {
+		processor:	binary.UINT32_LE,
+	},
+	[TABLE.AssemblyOS]: {
+		platform:	binary.UINT32_LE,
+		minor:		binary.UINT32_LE,
+		major:		binary.UINT32_LE,
+	},
+	[TABLE.AssemblyRef]: {
+		major:		binary.UINT16_LE,
+		minor:		binary.UINT16_LE,
+		build:		binary.UINT16_LE,
+		rev:		binary.UINT16_LE,
+		flags:		binary.UINT32_LE,
+		publickey:	clr_Blob,
+		name:		clr_String,
+		culture:	clr_String,
+		hashvalue:	clr_Blob,
+	},
+	[TABLE.AssemblyRefProcessor]: {
+		processor:	binary.UINT32_LE,
+		assembly:	Indexed(TABLE.AssemblyRef),
+	},
+	[TABLE.AssemblyRefOS]: {
+		platform:	binary.UINT32_LE,
+		major:		binary.UINT32_LE,
+		minor:		binary.UINT32_LE,
+		assembly:	Indexed(TABLE.AssemblyRef),
+	},
+	[TABLE.File]: {
+		flags:		binary.UINT32_LE,
+		name:		clr_String,
+		hash:		clr_Blob,
+	},
+	[TABLE.ExportedType]: {
+		flags:		binary.UINT32_LE,
+		typedef_id:	binary.UINT32_LE,//(a 4-byte index into a TypeDef table of another module in this Assembly).
+		name:		clr_String,
+		namespce:	clr_String,
+		implementation:	Implementation,
+	},
+	[TABLE.ManifestResource]: {
+		data:			binary.UINT32_LE,
+		flags:			binary.UINT32_LE,
+		name:			clr_String,
+		implementation:	Implementation,
+	},
+	[TABLE.NestedClass]: {
+		nested_class:		Indexed(TABLE.TypeDef),
+		enclosing_class:	Indexed(TABLE.TypeDef),
+	},
+	[TABLE.GenericParam]: {
+		number:			binary.UINT16_LE,
+		flags:			binary.UINT16_LE,
+		owner:			TypeOrMethodDef,
+		name:			clr_String,
+	},
+	[TABLE.MethodSpec]: {
+		method:			MethodDefOrRef,
+		instantiation:	Signature,
+	},
+	[TABLE.GenericParamConstraint]: {
+		owner:			Indexed(TABLE.GenericParam),
+		constraint:		TypeDefOrRef,
+	},
 };
 
 const ResourceManagerHeader = {
