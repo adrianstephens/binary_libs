@@ -695,7 +695,7 @@ export class ELFFile {
 				const flags = (this.p_flags.R ? binary.MEM.READ : 0)
 							| (this.p_flags.W ? binary.MEM.WRITE : 0)
 							| (this.p_flags.X ? binary.MEM.EXECUTE : 0);
-				this.data = new binary.MappedMemory(s.buffer_at(Number(this.p_offset), Number(this.p_filesz)), +this.p_vaddr, flags);
+				this.data = new binary.MappedMemory(s.buffer_at(Number(this.p_offset), Number(this.p_filesz)), Number(this.p_vaddr), flags);
 			}
 		}
 
@@ -717,7 +717,7 @@ export class ELFFile {
 				const flags = binary.MEM.READ
 							| (this.sh_flags.WRITE ? binary.MEM.WRITE : 0)
 							| (this.sh_flags.EXECINSTR ? binary.MEM.EXECUTE : 0);
-				this.data = new binary.MappedMemory(s.buffer_at(Number(this.sh_offset), Number(this.sh_size)), +this.sh_addr, flags);
+				this.data = new binary.MappedMemory(s.buffer_at(Number(this.sh_offset), Number(this.sh_size)), Number(this.sh_addr), flags);
 			}
 		}
 
