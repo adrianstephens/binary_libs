@@ -3,10 +3,10 @@
 	"tasks": [
 		{
 			"type": "npm",
+			"label": "npm: build",
 			"script": "build",
 			"group": "build",
 			"problemMatcher": "$tsc",
-			"label": "npm: build",
 			"detail": "tsc"
 		},
 		{
@@ -26,6 +26,14 @@
 			"problemMatcher": [],
 			"dependsOn": "prepublish"
 		},
+		{
+			"type": "shell",
+			"label": "PACKAGE",
+			"command": "npm pack",
+			"problemMatcher": [],
+			"dependsOn": "npm: build"
+		},
+
 	],
 	"inputs": [
 		{
