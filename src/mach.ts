@@ -1038,7 +1038,7 @@ export class MachFile {
 	}
 
 	header!: binary.ReadType<typeof header>;
-	private commands:{cmd:CMD, data:any}[]	= [];
+	commands:{cmd:CMD, data:any}[]	= [];
 
 	constructor(data: Uint8Array, mem?: binary.memory) {
 		const magic	= binary.UINT32_LE.get(new binary.stream(data));
