@@ -718,7 +718,8 @@ export class ELFFile {
 				const flags = binary.MEM.RELATIVE | binary.MEM.READ
 							| (this.sh_flags.WRITE ? binary.MEM.WRITE : 0)
 							| (this.sh_flags.EXECINSTR ? binary.MEM.EXECUTE : 0);
-				this.data = new binary.MappedMemory(s.buffer_at(Number(this.sh_offset), Number(this.sh_size)), Number(this.sh_addr), flags);
+				const buffer = this.sh_type === 'NOBITS' ? new Uint8Array(0) : s.buffer_at(Number(this.sh_offset), Number(this.sh_size));
+				this.data = new binary.MappedMemory(buffer, Number(this.sh_addr), flags);
 			}
 		}
 
