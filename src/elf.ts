@@ -692,10 +692,10 @@ export class ELFFile {
 			data: binary.MappedMemory;
 			constructor(s: binary.stream) {
 				super(s);
-				const flags = binary.MEM.RELATIVE
-							| (this.p_flags.R ? binary.MEM.READ : 0)
-							| (this.p_flags.W ? binary.MEM.WRITE : 0)
-							| (this.p_flags.X ? binary.MEM.EXECUTE : 0);
+				const flags = binary.MappedMemory.RELATIVE
+							| (this.p_flags.R ? binary.MappedMemory.READ : 0)
+							| (this.p_flags.W ? binary.MappedMemory.WRITE : 0)
+							| (this.p_flags.X ? binary.MappedMemory.EXECUTE : 0);
 				this.data = new binary.MappedMemory(s.buffer_at(Number(this.p_offset), Number(this.p_filesz)), Number(this.p_vaddr), flags);
 			}
 		}
@@ -715,9 +715,9 @@ export class ELFFile {
 			data: binary.MappedMemory;
 			constructor(s: binary.stream) {
 				super(s);
-				const flags = binary.MEM.RELATIVE | binary.MEM.READ
-							| (this.sh_flags.WRITE ? binary.MEM.WRITE : 0)
-							| (this.sh_flags.EXECINSTR ? binary.MEM.EXECUTE : 0);
+				const flags = binary.MappedMemory.RELATIVE | binary.MappedMemory.READ
+							| (this.sh_flags.WRITE ? binary.MappedMemory.WRITE : 0)
+							| (this.sh_flags.EXECINSTR ? binary.MappedMemory.EXECUTE : 0);
 				const buffer = this.sh_type === 'NOBITS' ? new Uint8Array(0) : s.buffer_at(Number(this.sh_offset), Number(this.sh_size));
 				this.data = new binary.MappedMemory(buffer, Number(this.sh_addr), flags);
 			}
@@ -782,7 +782,7 @@ export class ELFFile {
 					if (+sym.st_shndx) {
 						const section = sh[+sym.st_shndx];
 						const offset = Number(sym.st_value.value) - Number(section.sh_addr.value);
-						const flags	= sym.st_info.type === 'FUNC' ? section.data.flags : section.data.flags & ~binary.MEM.EXECUTE;
+						const flags	= sym.st_info.type === 'FUNC' ? section.data.flags : section.data.flags & ~binary.MappedMemory.EXECUTE;
 						sym.data = new binary.MappedMemory(section.data.data.subarray(offset, offset + Number(sym.st_size)), Number(sym.st_value.value), flags);
 					}
 					return [binary.utils.decodeTextTo0(names.subarray(sym.st_name), 'utf8'), sym] as [string, typeof sym];

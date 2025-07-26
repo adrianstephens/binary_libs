@@ -420,7 +420,7 @@ function section(bits: 32|64) {
 		data:	Promise<binary.MappedMemory>;
 		constructor(s: mach_stream) {
 			super(s);
-			const prot	= this.flags.ATTRIBUTES.SYS.SOME_INSTRUCTIONS ? binary.MEM.EXECUTE : binary.MEM.NONE;
+			const prot	= this.flags.ATTRIBUTES.SYS.SOME_INSTRUCTIONS ? binary.MappedMemory.EXECUTE | binary.MappedMemory.RELATIVE : binary.MappedMemory.RELATIVE;
 			this.data 	= (async () =>
 				//new binary.utils.MappedMemory(await s.file.get(BigInt(this.addr), Number(this.size)), Number(this.addr), prot)
 				new binary.MappedMemory(s.subdata(+this.offset, Number(this.size)), Number(this.addr), prot)
@@ -458,7 +458,7 @@ function segment<T extends 32|64>(bits: T) {
 
 			async function load() {
 				const data = await s.getmem(BigInt(Number(o.vmaddr)), Number(o.filesize)) ?? s.subdata(Number(o.fileoff), Number(o.filesize));
-				o.data = new binary.MappedMemory(data, Number(o.vmaddr), o.initprot);
+				o.data = new binary.MappedMemory(data, Number(o.vmaddr), o.initprot | binary.MappedMemory.RELATIVE);
 
 				//const sect = section(bits);
 				if (o.nsects) {
@@ -1113,8 +1113,8 @@ export class FATMachFile {
 	
 	constructor(data: Uint8Array, mem?: binary.memory) {
 		switch (binary.UINT32_BE.get(new binary.stream(data))) {
-			case FAT_MAGIC:		this.load(new binary.endianStream(data, false), mem); break;
-			case FAT_CIGAM:		this.load(new binary.endianStream(data, true), mem); break;
+			case FAT_MAGIC:		this.load(new binary.endianStream(data, true), mem); break;
+			case FAT_CIGAM:		this.load(new binary.endianStream(data, false), mem); break;
 			default:
 				throw new Error('not a fat mach file');
 		}

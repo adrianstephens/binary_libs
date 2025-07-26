@@ -146,10 +146,10 @@ class Section extends binary.ReadClass({
 		}
 	}
 	get flags() {
-		return binary.MEM.RELATIVE
-			| (this.Characteristics.MEM_READ	? binary.MEM.READ 	: 0)
-			| (this.Characteristics.MEM_WRITE	? binary.MEM.WRITE 	: 0)
-			| (this.Characteristics.MEM_EXECUTE	? binary.MEM.EXECUTE	: 0);
+		return binary.MappedMemory.RELATIVE
+			| (this.Characteristics.MEM_READ	? binary.MappedMemory.READ 	: 0)
+			| (this.Characteristics.MEM_WRITE	? binary.MappedMemory.WRITE 	: 0)
+			| (this.Characteristics.MEM_EXECUTE	? binary.MappedMemory.EXECUTE	: 0);
 	}
 }
 
