@@ -55,13 +55,13 @@ export class ArchFile {
 				const offsets	= binary.ArrayType(binary.INT32_BE, binary.INT32_BE).get(s2);
 				member.name = 'Symbols';
 				member.contents = offsets.map(offset => [
-					binary.NullTerminatedStringType.get(s2),
+					binary.NullTerminatedStringType().get(s2),
 					offset
 				]);
 
 			} else if (member.name == '/SYM') {
 				const s2	= new binary.stream(data);
-				const syms	= binary.ArrayType(binary.INT32_BE, binary.NullTerminatedStringType).get(s2);
+				const syms	= binary.ArrayType(binary.INT32_BE, binary.NullTerminatedStringType()).get(s2);
 				member.contents = syms.map(name => ({
 					name,
 					offset: binary.INT32_BE.get(s2)

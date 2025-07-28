@@ -39,7 +39,7 @@ const CLR_HEADER = {
 const STREAM_HDR = {
 	Offset:		binary.UINT32_LE,		// Memory offset to start of this stream from start of the metadata root (§II.24.2.1)
 	Size:		binary.UINT32_LE,		// Size of this stream in bytes, shall be a multiple of 4.
-	Name:		binary.NullTerminatedStringType,	// Name of the stream as null-terminated variable length array of ASCII characters, padded to the next 4-byte boundary with \0 characters. The name is limited to 32 characters.
+	Name:		binary.NullTerminatedStringType(),	// Name of the stream as null-terminated variable length array of ASCII characters, padded to the next 4-byte boundary with \0 characters. The name is limited to 32 characters.
 	unused:		binary.AlignType(4),
 };
 

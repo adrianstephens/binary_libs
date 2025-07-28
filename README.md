@@ -2,6 +2,8 @@
 
 This package provides readers for various library formats, using the @isopodlabs/binary binary file loading library
 
+## ☕ Support My Work  
+If you use this package, consider [buying me a tea](https://coff.ee/adrianstephens) to support future updates!  
 
 ## Supported File Types
 

@@ -1,12 +1,12 @@
 import * as binary from '@isopodlabs/binary';
 
 class mach_stream extends binary.endianStream {
-	constructor(public base: Uint8Array, data: Uint8Array, be: boolean, public mem?: binary.memory) { super(data, be); }
+	constructor(public base: Uint8Array, data: Uint8Array, be: boolean, public memflags: number, public mem?: binary.memory) { super(data, be); }
 	subdata(offset: number, size?: number) {
 		return this.base.subarray(offset, size && offset + size);
 	}
 	substream(offset: number, size?: number) {
-		return new mach_stream(this.base, this.subdata(offset, size), this.be, this.mem);
+		return new mach_stream(this.base, this.subdata(offset, size), this.be, this.memflags, this.mem);
 	}
 	getmem(address: bigint, size: number) {
 		return this.mem?.get(address, size);
@@ -400,7 +400,7 @@ const SECTION_FLAGS = binary.BitFields({
 });
 
 function section(bits: 32|64) {
-	const type		= binary.UINT(bits);
+	const type		= binary.asHex(binary.UINT(bits));
 
 	class Section extends binary.Class({
 		//data:		binary.DontRead<binary.utils.MappedMemory>(),
@@ -420,7 +420,7 @@ function section(bits: 32|64) {
 		data:	Promise<binary.MappedMemory>;
 		constructor(s: mach_stream) {
 			super(s);
-			const prot	= this.flags.ATTRIBUTES.SYS.SOME_INSTRUCTIONS ? binary.MappedMemory.EXECUTE | binary.MappedMemory.RELATIVE : binary.MappedMemory.RELATIVE;
+			const prot	= this.flags.ATTRIBUTES.SYS.SOME_INSTRUCTIONS ? binary.MappedMemory.EXECUTE | s.memflags : s.memflags;
 			this.data 	= (async () =>
 				//new binary.utils.MappedMemory(await s.file.get(BigInt(this.addr), Number(this.size)), Number(this.addr), prot)
 				new binary.MappedMemory(s.subdata(+this.offset, Number(this.size)), Number(this.addr), prot)
@@ -438,7 +438,7 @@ const SEGMENT_FLAGS = {
 };
 
 function segment<T extends 32|64>(bits: T) {
-	const type		= binary.UINT(bits);
+	const type		= binary.asHex(binary.UINT(bits));
 	const fields	= {
 		data:		binary.DontRead<binary.MappedMemory>(),
 		segname: 	fixed_string16,	// segment name
@@ -458,7 +458,7 @@ function segment<T extends 32|64>(bits: T) {
 
 			async function load() {
 				const data = await s.getmem(BigInt(Number(o.vmaddr)), Number(o.filesize)) ?? s.subdata(Number(o.fileoff), Number(o.filesize));
-				o.data = new binary.MappedMemory(data, Number(o.vmaddr), o.initprot | binary.MappedMemory.RELATIVE);
+				o.data = new binary.MappedMemory(data, Number(o.vmaddr), o.initprot | s.memflags);
 
 				//const sect = section(bits);
 				if (o.nsects) {
@@ -1061,7 +1061,7 @@ export class MachFile {
 
 		for (let i = 0; i < h.ncmds; ++i) {
 			const cmd	= binary.read(file, command);
-			const file2	= new mach_stream(data, file.read_buffer(cmd.cmdsize - 8), file.be, mem);
+			const file2	= new mach_stream(data, file.read_buffer(cmd.cmdsize - 8), file.be, h.filetype === 'EXECUTE' ? 0: binary.MappedMemory.RELATIVE, mem);
 			const result = binary.read(file2, cmd_table[cmd.cmd] ?? {});
 			this.commands.push({cmd: cmd.cmd, data: result});
 		}
@@ -1071,7 +1071,7 @@ export class MachFile {
 		if (funcs) {
 			const array = funcs.contents;
 			const text	= this.getSegment('__TEXT');
-			let acc	= BigInt(text?.vmaddr ?? 0);
+			let acc	= BigInt(text?.vmaddr.value ?? 0);
 			for (const i in array)
 				array[i] = (acc += BigInt(array[i]));
 		}
