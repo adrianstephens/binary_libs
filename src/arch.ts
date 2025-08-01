@@ -35,7 +35,9 @@ export class ArchFile {
 		if (header !== '!<arch>\n')
 			throw new Error('Invalid archive file format');
 
+		const nullTerminatedString = binary.NullTerminatedStringType();
 		let long_names;
+		let blanks = 0;
 		while (s.remaining() > 0) {
 			const member = binary.read(s, _HEADER);
 			const data = s.read_buffer(member.size);
@@ -52,16 +54,33 @@ export class ArchFile {
 
 			if (member.name == '') {
 				const s2		= new binary.stream(data);
-				const offsets	= binary.ArrayType(binary.INT32_BE, binary.INT32_BE).get(s2);
-				member.name = 'Symbols';
-				member.contents = offsets.map(offset => [
-					binary.NullTerminatedStringType().get(s2),
-					offset
-				]);
+				switch (++blanks) {
+					case 1: {
+						const offsets	= binary.ArrayType(binary.INT32_BE, binary.INT32_BE).get(s2);
+						member.name = 'Symbols';
+						member.contents = offsets.map(offset => [
+							nullTerminatedString.get(s2),
+							offset
+						]);
+						break;
+					}
+
+					case 2: { // microsoft symbols
+						const member_offsets	= binary.ArrayType(binary.INT32_LE, binary.INT32_LE).get(s2);
+						const indices			= binary.ArrayType(binary.INT32_LE, binary.INT16_LE).get(s2);
+
+						member.name = 'Symbols2';
+						member.contents = indices.map(i => [
+							nullTerminatedString.get(s2),
+							i
+						]);
+						break;
+					}
+				}
 
 			} else if (member.name == '/SYM') {
 				const s2	= new binary.stream(data);
-				const syms	= binary.ArrayType(binary.INT32_BE, binary.NullTerminatedStringType()).get(s2);
+				const syms	= binary.ArrayType(binary.INT32_BE, nullTerminatedString).get(s2);
 				member.contents = syms.map(name => ({
 					name,
 					offset: binary.INT32_BE.get(s2)
