@@ -1,4 +1,7 @@
 # Binary Libs
+[![npm version](https://img.shields.io/npm/v/@isopodlabs/binary_libs.svg)](https://www.npmjs.com/package/@isopodlabs/binary_libs)
+[![GitHub stars](https://img.shields.io/github/stars/adrianstephens/binary_libs.svg?style=social)](https://github.com/adrianstephens/binary_libs)
+[![License](https://img.shields.io/npm/l/@isopodlabs/binary_libs.svg)](LICENSE)
 
 This package provides readers for various library formats, using the @isopodlabs/binary binary file loading library
 

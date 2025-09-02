@@ -10,66 +10,13 @@ const uint16	= binary.UINT16_LE;
 const uint32	= binary.UINT32_LE;
 const uint64	= binary.UINT64_LE;
 
-const TIMEDATE = binary.as(uint32, MyDate);
+const TIMEDATE	= binary.as(uint32, MyDate);
 
 //-----------------------------------------------------------------------------
 //	COFF
 //-----------------------------------------------------------------------------
 
-const DOS_HEADER = {
-	magic:		uint16,
-	cblp:		uint16,
-	cp:			uint16,
-	crlc:		uint16,
-	cparhdr:	uint16,
-	minalloc:	uint16,
-	maxalloc:	binary.asHex(uint16),
-	ss:			uint16,
-	sp:			uint16,
-	csum:		uint16,
-	ip:			uint16,
-	cs:			uint16,
-	lfarlc:		uint16,
-	ovno:		uint16,
-};
-
-const EXE_HEADER = {
-	res:		binary.ArrayType(4, uint16),
-	oemid:		uint16,
-	oeminfo:	uint16,
-	res2:		binary.ArrayType(10, uint16),
-	lfanew:		binary.INT32_LE,
-};
-
-//-----------------------------------------------------------------------------
-//	PE
-//-----------------------------------------------------------------------------
-
-export class pe_stream extends binary.stream {
-	constructor(public pe: PE, data: Uint8Array) {
-		super(data);
-	}
-	get_rva()	{ return this.pe.GetDataRVA(uint32.get(this))?.data; }
-}
-
-const RVA_STRING = {
-	get(s: pe_stream)	{ return binary.utils.decodeTextTo0(s.get_rva(), 'utf8'); },
-	put(_s: pe_stream)	{}
-};
-const RVA_ARRAY16 = {
-	get(s: pe_stream)	{ return binary.utils.to16(s.get_rva()); },
-	put(_s: pe_stream)	{}
-};
-const RVA_ARRAY32 = {
-	get(s: pe_stream)	{ return binary.utils.to32(s.get_rva()); },
-	put(_s: pe_stream)	{}
-};
-const RVA_ARRAY64 = {
-	get(s: pe_stream)	{ return binary.utils.to64(s.get_rva()); },
-	put(_s: pe_stream)	{}
-};
-
-const MACHINE = binary.asEnum(uint16, {
+const MACHINES: Record<string, number> = {
 	UNKNOWN:	0x0,
 	AM33:		0x1d3,
 	AMD64:		0x8664,
@@ -91,7 +38,8 @@ const MACHINE = binary.asEnum(uint16, {
 	SH5:		0x1a8,
 	THUMB:		0x1c2,
 	WCEMIPSV2:	0x169,
-});
+};
+const MACHINE = binary.asEnum(uint16, MACHINES);
 
 const FILE_HEADER = {
 	Machine:				MACHINE,
@@ -171,11 +119,116 @@ export class Section extends binary.ReadClass({
 	}
 	get flags() {
 		return binary.MappedMemory.RELATIVE
-			| (this.Characteristics.MEM_READ	? binary.MappedMemory.READ 	: 0)
+			| (this.Characteristics.MEM_READ	? binary.MappedMemory.READ 		: 0)
 			| (this.Characteristics.MEM_WRITE	? binary.MappedMemory.WRITE 	: 0)
 			| (this.Characteristics.MEM_EXECUTE	? binary.MappedMemory.EXECUTE	: 0);
 	}
 }
+
+export class COFF {
+	static check(data: Uint8Array): boolean {
+		const header = binary.read(new binary.stream(data), FILE_HEADER);
+		return MACHINES[header.Machine] !== undefined;
+	}
+
+	header:		binary.ReadType<typeof FILE_HEADER>;
+	opt?:		binary.ReadType<typeof OPTIONAL_HEADER> & (binary.ReadType<typeof OPTIONAL_HEADER32> | binary.ReadType<typeof OPTIONAL_HEADER64>);
+	sections:	Section[];
+
+	constructor(data: Uint8Array) {
+		const file	= new binary.stream(data);
+		this.header = binary.read(file, FILE_HEADER);
+
+		if (this.header.SizeOfOptionalHeader) {
+			console.log("COFF: SizeOfOptionalHeader", this.header.SizeOfOptionalHeader);
+
+		}
+
+		this.sections = Array.from({length: this.header.NumberOfSections}, () => new Section(file));
+	}
+}
+
+// these appear in libs:
+
+const SYMBOL = {
+	a: uint16,	//0
+	b: uint16,	//0xffff
+	c: uint16,	//0
+	Architecture:	MACHINE,  // 0x14C for x86, 0x8664 for x64
+	Id:				uint32,
+	Length:			uint32,
+	//union {
+	//    Hint: uint16,
+	//    Ordinal: uint16,
+		Value: uint16,
+	//}
+	Type: uint16,
+	Symbol: binary.NullTerminatedStringType(),
+	Module: binary.NullTerminatedStringType(),
+};
+
+export class COFFSymbol extends binary.ReadClass(SYMBOL) {
+	static check(data: Uint8Array): boolean {
+		const test = binary.read(new binary.stream(data), SYMBOL);
+		return test.a === 0 && test.b === 0xffff && test.c === 0 && test.Architecture != 'UNKNOWN';
+	}
+	constructor(data: Uint8Array) {
+		super(new binary.stream(data));
+	}
+}
+
+//-----------------------------------------------------------------------------
+//	PE
+//-----------------------------------------------------------------------------
+
+export class pe_stream extends binary.stream {
+	constructor(public pe: PE, data: Uint8Array) {
+		super(data);
+	}
+	get_rva()	{ return this.pe.GetDataRVA(uint32.get(this))?.data; }
+}
+
+const RVA_STRING = {
+	get(s: pe_stream)	{ return binary.utils.decodeTextTo0(s.get_rva(), 'utf8'); },
+	put(_s: pe_stream)	{}
+};
+const RVA_ARRAY16 = {
+	get(s: pe_stream)	{ return binary.utils.to16(s.get_rva()); },
+	put(_s: pe_stream)	{}
+};
+const RVA_ARRAY32 = {
+	get(s: pe_stream)	{ return binary.utils.to32(s.get_rva()); },
+	put(_s: pe_stream)	{}
+};
+const RVA_ARRAY64 = {
+	get(s: pe_stream)	{ return binary.utils.to64(s.get_rva()); },
+	put(_s: pe_stream)	{}
+};
+
+const DOS_HEADER = {
+	magic:		uint16,
+	cblp:		uint16,
+	cp:			uint16,
+	crlc:		uint16,
+	cparhdr:	uint16,
+	minalloc:	uint16,
+	maxalloc:	binary.asHex(uint16),
+	ss:			uint16,
+	sp:			uint16,
+	csum:		uint16,
+	ip:			uint16,
+	cs:			uint16,
+	lfarlc:		uint16,
+	ovno:		uint16,
+};
+
+const EXE_HEADER = {
+	res:		binary.ArrayType(4, uint16),
+	oemid:		uint16,
+	oeminfo:	uint16,
+	res2:		binary.ArrayType(10, uint16),
+	lfanew:		binary.INT32_LE,
+};
 
 interface DirectoryInfo {
 	read?: (pe: PE, data: binary.MappedMemory) => any;
@@ -365,57 +418,6 @@ export class PE {
 		}
 	}
 }
-
-export class COFF {
-	static check(data: Uint8Array): boolean {
-		const header = binary.read(new binary.stream(data), FILE_HEADER);
-		return header.Machine != 'UNKNOWN';
-	}
-
-	header:		binary.ReadType<typeof FILE_HEADER>;
-	opt?:		binary.ReadType<typeof OPTIONAL_HEADER> & (binary.ReadType<typeof OPTIONAL_HEADER32> | binary.ReadType<typeof OPTIONAL_HEADER64>);
-	sections:	Section[];
-
-	constructor(data: Uint8Array) {
-		const file	= new binary.stream(data);
-		this.header = binary.read(file, FILE_HEADER);
-
-		if (this.header.SizeOfOptionalHeader) {
-			console.log("COFF: SizeOfOptionalHeader", this.header.SizeOfOptionalHeader);
-
-		}
-
-		this.sections = Array.from({length: this.header.NumberOfSections}, () => new Section(file));
-	}
-}
-
-const SYMBOL = {
-	a: uint16,	//0
-	b: uint16,	//0xffff
-	c: uint16,	//0
-	Architecture:	MACHINE,  // 0x14C for x86, 0x8664 for x64
-	Id:				uint32,
-	Length:			uint32,
-	//union {
-	//    Hint: uint16,
-	//    Ordinal: uint16,
-		Value: uint16,
-	//}
-	Type: uint16,
-	Symbol: binary.NullTerminatedStringType(),
-	Module: binary.NullTerminatedStringType(),
-};
-
-export class COFFSymbol extends binary.ReadClass(SYMBOL) {
-	static check(data: Uint8Array): boolean {
-		const test = binary.read(new binary.stream(data), SYMBOL);
-		return test.a === 0 && test.b === 0xffff && test.c === 0 && test.Architecture != 'UNKNOWN';
-	}
-	constructor(data: Uint8Array) {
-		super(new binary.stream(data));
-	}
-}
-
 
 //-----------------------------------------------------------------------------
 //	exports

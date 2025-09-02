@@ -1,6 +1,10 @@
 {
   "name": "@isopodlabs/binary_libs",
   "description": "A package for reading various library file format with TypeScript.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adrianstephens/binary_libs.git"
+  },
   "exports": {
     "./arch": "./dist/arch.js",
     "./clr": "./dist/clr.js",
